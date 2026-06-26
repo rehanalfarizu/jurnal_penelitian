@@ -1,0 +1,2 @@
+sensor_data.csv filter=lfs diff=lfs merge=lfs -text
+best_energy_model.joblib filter=lfs diff=lfs merge=lfs -text
