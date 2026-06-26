@@ -1,0 +1,9 @@
+{
+  "last_training": "2026-01-10T17:50:10.127108",
+  "last_record_count": 2121,
+  "model_version": 1,
+  "accuracy": {
+    "energy_r2": 0.9686601997184456,
+    "ac_r2": 0.8629253408102433
+  }
+}

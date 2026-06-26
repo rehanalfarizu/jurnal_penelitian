@@ -1,0 +1,26 @@
+{
+  "energy_features": [
+    "suhu",
+    "kelembaban",
+    "tegangan",
+    "arus",
+    "hour"
+  ],
+  "ac_features": [
+    "suhu",
+    "kelembaban",
+    "daya",
+    "hour",
+    "month"
+  ],
+  "energy_metrics": {
+    "r2": 0.9686601997184456,
+    "mae": 1.0560854406988558
+  },
+  "ac_metrics": {
+    "r2": 0.8629253408102433,
+    "mae": 0.006048404707194406
+  },
+  "training_date": "2026-01-10T17:50:10.126691",
+  "model_version": 1
+}

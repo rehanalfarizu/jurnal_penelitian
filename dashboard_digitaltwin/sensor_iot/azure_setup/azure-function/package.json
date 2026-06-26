@@ -1,0 +1,21 @@
+{
+  "name": "mqtt-to-iothub-function",
+  "version": "1.0.0",
+  "description": "Azure Function to bridge MQTT (HiveMQ) to Azure IoT Hub and compress 3D models",
+  "scripts": {
+    "start": "func start",
+    "test": "echo \"No tests yet\"",
+    "compress-models": "node scripts/compress-all-models.js"
+  },
+  "dependencies": {
+    "@azure/data-tables": "^13.2.2",
+    "@azure/event-hubs": "^5.11.0",
+    "@azure/identity": "^4.13.0",
+    "@azure/storage-blob": "^12.17.0",
+    "azure-iot-common": "^1.13.0",
+    "azure-iothub": "^1.16.3"
+  },
+  "devDependencies": {
+    "@azure/functions": "^4.0.0"
+  }
+}

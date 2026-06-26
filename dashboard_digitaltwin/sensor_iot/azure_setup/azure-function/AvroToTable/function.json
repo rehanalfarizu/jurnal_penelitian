@@ -1,0 +1,11 @@
+{
+  "bindings": [
+    {
+      "name": "myBlob",
+      "type": "blobTrigger",
+      "direction": "in",
+      "path": "sensortelemetry/{name}",
+      "connection": "BLOB_CONNECTION_STRING"
+    }
+  ]
+}

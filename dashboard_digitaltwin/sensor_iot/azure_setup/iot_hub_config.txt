@@ -1,0 +1,45 @@
+# Azure IoT Hub Configuration
+# Generated: Fri Jan 24 18:15:00 WIB 2026
+# SUBSCRIPTION: ikhsankuliah017@gmail.com
+
+========================================
+AZURE SUBSCRIPTION INFO
+========================================
+
+Subscription Name: Azure for Students
+Subscription ID: 106927d0-a070-40b3-b1ed-ba809facb287
+Resource Group: rg-digitaltwin
+Location: southeastasia
+
+========================================
+RESOURCE NAMES (Get keys from Azure Portal)
+========================================
+
+IoT Hub Name: iothub-digitaltwin-2026
+Device ID: ESP32_ENERGY_MONITOR_001  
+Storage Account: stordigitaltwin2026
+Table Name: SensorTelemetry
+Function App: func-digitaltwin-2026
+
+========================================
+HOW TO GET CONNECTION STRINGS
+========================================
+
+1. IoT Hub Connection String:
+   az iot hub connection-string show --hub-name iothub-digitaltwin-2026
+
+2. Device Key:
+   az iot hub device-identity show --hub-name iothub-digitaltwin-2026 --device-id ESP32_ENERGY_MONITOR_001
+
+3. Storage Connection String:
+   az storage account show-connection-string --name stordigitaltwin2026 --resource-group rg-digitaltwin
+
+========================================
+EVENT HUB ENDPOINT (for Azure Function Trigger)
+========================================
+
+Endpoint: sb://ihsuprodsgres029dednamespace.servicebus.windows.net/
+Path: iothub-ehub-iothub-dig-57762886-628aa54031
+Partition Count: 2
+
+

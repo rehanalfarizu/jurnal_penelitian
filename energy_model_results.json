@@ -1,0 +1,48 @@
+{
+  "title": "Validasi Akurasi Prediksi Energi",
+  "dataset": "sensor_data.csv",
+  "total_records_in_dataset": 2027520,
+  "sample_size": 2027520,
+  "sample_fraction": 1.0,
+  "n_features": 18,
+  "feature_columns": [
+    "suhu",
+    "kelembaban",
+    "tegangan",
+    "arus",
+    "jumlah_orang",
+    "tegangan_arus",
+    "suhu_kelembaban",
+    "hour",
+    "dayofweek",
+    "day",
+    "time_period_afternoon",
+    "time_period_evening",
+    "time_period_midday",
+    "time_period_morning",
+    "time_period_night",
+    "daya_ma_short",
+    "daya_ma_long",
+    "suhu_ma_short"
+  ],
+  "train_size": 1622016,
+  "test_size": 405504,
+  "results": [
+    {
+      "model": "Linear Regression",
+      "rmse": 0.5702044686492433,
+      "mae": 0.46133264782098476,
+      "r2": 0.9650744342216772,
+      "mape": 1.2579048042040126
+    },
+    {
+      "model": "Random Forest",
+      "rmse": 0.21154661528843585,
+      "mae": 0.15306221506327025,
+      "r2": 0.9951927757772843,
+      "mape": 0.41590723827178416
+    }
+  ],
+  "baseline_old_notebook_r2": 0.595,
+  "note": "Baseline notebook lama tidak menggunakan fitur Tegangan dan Arus"
+}
