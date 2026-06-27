@@ -132,7 +132,7 @@ const getStatusClass = (type) => {
   gap: 18px;
   position: relative;
   border: 2px solid transparent;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   box-shadow: 0 8px 24px var(--shadow-sm);
   overflow: hidden;
   animation: cardFadeIn 0.6s ease-out backwards;
@@ -290,7 +290,7 @@ const getStatusClass = (type) => {
   font-size: 48px;
   flex-shrink: 0;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  transition: all 0.3s ease;
   animation: iconFloat 3s ease-in-out infinite;
 }
 
@@ -327,7 +327,7 @@ const getStatusClass = (type) => {
   background-clip: text;
   margin-bottom: 5px;
   line-height: 1.2;
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  transition: all 0.3s;
 }
 
 .sensor-card:hover .sensor-value {

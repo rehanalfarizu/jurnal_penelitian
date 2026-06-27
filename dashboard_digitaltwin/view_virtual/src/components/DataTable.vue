@@ -258,7 +258,7 @@ th:not(:last-child)::after {
 
 tbody tr {
   border-bottom: 1px solid var(--border-dark);
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  transition: all 0.3s ease;
   background: var(--bg-card);
 }
 
@@ -300,7 +300,7 @@ td {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
@@ -338,7 +338,7 @@ td {
   border-radius: 20px;
   text-align: center;
   border: 2px solid transparent;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   box-shadow: 0 8px 24px var(--shadow-sm);
   position: relative;
   overflow: hidden;
@@ -396,7 +396,7 @@ td {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   line-height: 1.2;
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  transition: all 0.3s;
 }
 
 .summary-item:hover .summary-value {

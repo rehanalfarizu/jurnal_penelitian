@@ -1,1249 +1,2247 @@
 <template>
-  <div class="admin-dashboard" :class="{ 'dark': isDarkMode }">
-    <!-- Hero Banner -->
-    <div class="hero-banner">
-      <div class="hero-kicker">ADMIN CONTROL</div>
-      <h2>Dashboard Hardware & Services</h2>
-      <p>Kontrol ESP32, Raspberry Pi services, dan monitoring sistem</p>
-      <div class="hero-meta">
-        <span class="meta-badge">Last Update: {{ lastUpdateText }}</span>
-        <span class="meta-badge status-badge" :class="systemStatusClass">
-          {{ systemStatusText }}
-        </span>
-      </div>
-    </div>
-
-    <!-- Auto-refresh indicator -->
-    <div class="auto-refresh-bar">
-      <span>Auto-refresh: {{ autoRefreshSeconds }}s</span>
-      <div class="refresh-progress" :style="{ width: ((autoRefreshSeconds - refreshCountdown) / autoRefreshSeconds * 100) + '%' }"></div>
-    </div>
-
-    <!-- ESP32 Control Section -->
-    <div class="control-section">
-      <div class="section-header">
-        <h3 class="section-title">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
-            <line x1="8" y1="21" x2="16" y2="21"/>
-            <line x1="12" y1="17" x2="12" y2="21"/>
-          </svg>
-          ESP32 Control
-        </h3>
-        <span class="device-id">Device: {{ esp32DeviceId || 'Loading...' }}</span>
+  <div class="admin" :class="{ dark: isDarkMode }">
+    <aside class="sidebar" :class="{ 'mobile-open': isMobileMenuOpen }">
+      <div class="sidebar-brand">
+        <div class="brand-logo-wrap">
+          <img src="/logo.png" alt="Logo" class="brand-logo" />
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">TwinSpace</span>
+          <span class="brand-role">ADMIN PANEL</span>
+        </div>
+        <button class="menu-close-btn" @click="isMobileMenuOpen = false">✕</button>
       </div>
 
-      <div class="control-grid">
-        <!-- ESP32 Health Status -->
-        <div class="control-card health-card">
-          <h4>ESP32 Health</h4>
-          <div class="health-stats">
-            <div class="health-item">
-              <span class="health-label">Temperature</span>
-              <span class="health-value" :class="esp32Health.temp > 60 ? 'warning' : ''">
-                {{ esp32Health.temp !== null ? esp32Health.temp.toFixed(1) + '°C' : 'N/A' }}
-              </span>
-            </div>
-            <div class="health-item">
-              <span class="health-label">Free Heap</span>
-              <span class="health-value">
-                {{ esp32Health.heap !== null ? esp32Health.heap.toLocaleString() + ' B' : 'N/A' }}
-              </span>
-            </div>
-            <div class="health-item">
-              <span class="health-label">WiFi RSSI</span>
-              <span class="health-value" :class="getRssiClass(esp32Health.rssi)">
-                {{ esp32Health.rssi !== null ? esp32Health.rssi + ' dBm' : 'N/A' }}
-              </span>
-            </div>
-            <div class="health-item">
-              <span class="health-label">Uptime</span>
-              <span class="health-value">{{ formatUptime(esp32Health.uptime) }}</span>
-            </div>
+      <nav class="nav">
+        <button
+          v-for="item in navItems"
+          :key="item.id"
+          class="nav-item"
+          :class="{ active: activeSection === item.id }"
+          @click="selectSection(item.id)"
+        >
+          <span class="nav-icon">{{ item.icon }}</span>
+          <span class="nav-label">{{ item.label }}</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="admin-chip">
+          <img v-if="user?.photoURL" :src="user.photoURL" class="admin-avatar" referrerpolicy="no-referrer" />
+          <div v-else class="admin-avatar admin-avatar-fallback">{{ userInitials }}</div>
+          <div class="admin-info">
+            <span class="admin-name">{{ displayName }}</span>
+            <span class="admin-email">{{ user?.email || '' }}</span>
           </div>
-          <button class="refresh-health-btn" @click="refreshEsp32Health" :disabled="isLoadingEsp32">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" :class="{ 'spin': isLoadingEsp32 }">
-              <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-            </svg>
-            Refresh
+        </div>
+        <div class="sidebar-actions">
+          <button class="action-btn logout" @click="$emit('logout')">
+            <span>🚪</span> Keluar Panel
           </button>
         </div>
+      </div>
+    </aside>
 
-        <!-- ESP32 Commands -->
-        <div class="control-card commands-card">
-          <h4>Commands</h4>
-          <div class="command-buttons">
-            <button class="cmd-btn" @click="sendEsp32Command('reboot')" :disabled="isSendingCommand">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="1 4 1 10 7 10"/>
-                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-              </svg>
-              Reboot ESP32
-            </button>
-            <button class="cmd-btn" @click="sendEsp32Command('wifi_reconnect')" :disabled="isSendingCommand">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
-                <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
-                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
-                <line x1="12" y1="20" x2="12.01" y2="20"/>
-              </svg>
-              Reconnect WiFi
-            </button>
-          </div>
-          <div class="sleep-control">
-            <span>Sleep Mode:</span>
-            <label class="toggle-switch">
-              <input type="checkbox" v-model="sleepModeEnabled" @change="toggleSleepMode">
-              <span class="toggle-slider"></span>
-            </label>
-            <input
-              type="number"
-              v-model="sleepDuration"
-              placeholder="Duration (ms)"
-              class="sleep-duration-input"
-              min="1000"
-              max="3600000"
-            />
+    <div v-if="isMobileMenuOpen" class="mobile-overlay" @click="isMobileMenuOpen = false"></div>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="burger-btn" @click="isMobileMenuOpen = true">
+            <span></span><span></span><span></span>
+          </button>
+          <div class="topbar-info">
+            <h1 class="page-title">{{ currentPageTitle }}</h1>
+            <p class="page-subtitle">{{ currentPageSubtitle }}</p>
           </div>
         </div>
-      </div>
+        <div class="topbar-right">
+          <div class="status-pill" :class="mqttConnected ? 'online' : 'offline'">
+            <span class="status-dot"></span>
+            {{ mqttConnected ? 'Azure Terhubung' : 'Simulasi / Offline' }}
+          </div>
+          <button class="theme-toggle" @click="$emit('toggle-theme')">
+            {{ isDarkMode ? '☀️' : '🌙' }}
+          </button>
+        </div>
+      </header>
 
-      <!-- Command Result -->
-      <div v-if="commandResult" class="command-result" :class="commandResult.type">
-        <strong>{{ commandResult.message }}</strong>
-      </div>
-    </div>
-
-    <!-- RPi Services Section -->
-    <div class="control-section">
-      <div class="section-header">
-        <h3 class="section-title">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="4" y="4" width="16" height="16" rx="2"/>
-            <rect x="9" y="9" width="6" height="6"/>
-            <line x1="9" y1="1" x2="9" y2="4"/>
-            <line x1="15" y1="1" x2="15" y2="4"/>
-            <line x1="9" y1="20" x2="9" y2="23"/>
-            <line x1="15" y1="20" x2="15" y2="23"/>
-            <line x1="20" y1="9" x2="23" y2="9"/>
-            <line x1="20" y1="14" x2="23" y2="14"/>
-            <line x1="1" y1="9" x2="4" y2="9"/>
-            <line x1="1" y1="14" x2="4" y2="14"/>
-          </svg>
-          Raspberry Pi Services
-        </h3>
-        <span class="device-id">RPi: {{ rpiAddress || 'Not configured' }}</span>
-      </div>
-
-      <div class="services-grid">
-        <div v-for="service in services" :key="service.name" class="service-card">
-          <div class="service-header">
-            <div class="service-info">
-              <div class="service-status-dot" :class="service.status"></div>
-              <span class="service-name">{{ service.displayName }}</span>
+      <section v-if="activeSection === 'overview'" class="section">
+        <div class="overview-head">
+          <div class="overview-copy">
+            <span class="overview-kicker">Overview</span>
+            <h2 class="overview-title">Pusat kontrol untuk memantau kondisi ruang dan sistem Azure.</h2>
+            <p class="overview-text">
+              Semua indikator utama, shortcut admin, dan aktivitas terbaru dirangkum dalam satu area.
+            </p>
+          </div>
+          <div class="overview-badges">
+            <div class="overview-badge" :class="mqttConnected ? 'online' : 'offline'">
+              <span class="overview-badge-dot"></span>
+              <span>{{ mqttConnected ? 'Azure Live' : 'Offline Mode' }}</span>
             </div>
-            <span class="service-status-text">{{ getStatusLabel(service.status) }}</span>
+            <div class="overview-badge neutral">
+              <span>{{ onlineDeviceCount }} perangkat aktif</span>
+            </div>
           </div>
-          <div class="service-details">
-            <span v-if="service.port" class="service-port">Port: {{ service.port }}</span>
+        </div>
+
+        <div class="stat-grid">
+          <div class="stat-card cyan">
+            <div class="stat-icon-bg">🌡️</div>
+            <div class="stat-body">
+              <span class="stat-label">Suhu Saat Ini</span>
+              <span class="stat-value">{{ sensorData.temperature.toFixed(1) }}°C</span>
+            </div>
           </div>
-          <div class="service-controls">
-            <button
-              class="svc-btn start"
-              @click="controlService(service.name, 'start')"
-              :disabled="service.status === 'running' || isControllingService"
-            >
-              Start
+          <div class="stat-card blue">
+            <div class="stat-icon-bg">💧</div>
+            <div class="stat-body">
+              <span class="stat-label">Kelembaban</span>
+              <span class="stat-value">{{ sensorData.humidity.toFixed(1) }}%</span>
+            </div>
+          </div>
+          <div class="stat-card purple">
+            <div class="stat-icon-bg">⚡</div>
+            <div class="stat-body">
+              <span class="stat-label">Daya Listrik</span>
+              <span class="stat-value">{{ sensorData.power.toFixed(1) }}W</span>
+            </div>
+          </div>
+          <div class="stat-card green">
+            <div class="stat-icon-bg">👥</div>
+            <div class="stat-body">
+              <span class="stat-label">Jumlah Orang</span>
+              <span class="stat-value">{{ sensorData.peopleCount || 0 }}</span>
+            </div>
+          </div>
+          <div class="stat-card orange">
+            <div class="stat-icon-bg">🔌</div>
+            <div class="stat-body">
+              <span class="stat-label">Tegangan</span>
+              <span class="stat-value">{{ sensorData.voltage.toFixed(1) }}V</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2 class="panel-title">⚡ Quick Actions</h2>
+          <div class="action-grid">
+            <button class="quick-action" @click="activeSection = 'energy'">
+              <span>💰</span> Energy Management
             </button>
-            <button
-              class="svc-btn stop"
-              @click="controlService(service.name, 'stop')"
-              :disabled="service.status !== 'running' || isControllingService"
-            >
-              Stop
+            <button class="quick-action" @click="activeSection = 'analytics'">
+              <span>📊</span> Historical Analytics
             </button>
-            <button
-              class="svc-btn restart"
-              @click="controlService(service.name, 'restart')"
-              :disabled="isControllingService"
-            >
-              Restart
+            <button class="quick-action" @click="activeSection = 'settings'">
+              <span>⚙️</span> Pengaturan Sistem
             </button>
           </div>
         </div>
-      </div>
-    </div>
 
-    <!-- System Control Section -->
-    <div class="control-section">
-      <div class="section-header">
-        <h3 class="section-title">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-          </svg>
-          System Control
-        </h3>
-      </div>
-
-      <div class="system-controls">
-        <div class="system-card">
-          <h4>Raspberry Pi System</h4>
-          <div class="system-stats">
-            <div class="sys-stat">
-              <span class="sys-label">CPU</span>
-              <span class="sys-value">{{ rpiStats.cpu }}%</span>
-            </div>
-            <div class="sys-stat">
-              <span class="sys-label">Memory</span>
-              <span class="sys-value">{{ rpiStats.memory }}%</span>
-            </div>
-            <div class="sys-stat">
-              <span class="sys-label">Disk</span>
-              <span class="sys-value">{{ rpiStats.disk }}%</span>
+        <div class="panel">
+          <h2 class="panel-title">🕐 Activity Log</h2>
+          <div class="log-list">
+            <div v-for="(log, i) in activityLog" :key="i" class="log-item">
+              <span class="log-icon">{{ log.icon }}</span>
+              <div class="log-body">
+                <span class="log-msg">{{ log.message }}</span>
+                <span class="log-time">{{ log.time }}</span>
+              </div>
             </div>
           </div>
-          <div class="system-buttons">
-            <button class="system-btn reboot" @click="confirmReboot">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="1 4 1 10 7 10"/>
-                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
-              </svg>
-              Reboot RPi
-            </button>
-            <button class="system-btn shutdown" @click="confirmShutdown">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18.36 6.64a9 9 0 1 1-12.73 0"/>
-                <line x1="12" y1="2" x2="12" y2="12"/>
-              </svg>
-              Shutdown RPi
-            </button>
+        </div>
+      </section>
+
+      <section v-if="activeSection === 'energy'" class="section">
+        <EnergyManagement :is-dark-mode="isDarkMode" :current-power="sensorData.power" />
+      </section>
+
+      <section v-if="activeSection === 'analytics'" class="section">
+        <HistoricalAnalytics :is-dark-mode="isDarkMode" :current-people-count="sensorData.peopleCount || 0" />
+      </section>
+
+      <section v-if="activeSection === 'devices'" class="section">
+        <div class="panel">
+          <h2 class="panel-title">🔧 Manajemen Perangkat IoT</h2>
+          <div class="device-grid">
+            <div v-for="device in devices" :key="device.id" class="device-card" :class="device.statusClass">
+              <div class="device-card-head">
+                <div class="device-icon">{{ device.icon }}</div>
+                <div class="device-status-wrap" :class="device.statusClass">
+                  <span class="device-status-dot" :class="device.statusClass"></span>
+                  <span class="device-status-text">{{ device.status }}</span>
+                </div>
+              </div>
+              <div class="device-info">
+                <strong>{{ device.name }}</strong>
+                <span class="device-id">{{ device.id }}</span>
+              </div>
+              <span class="device-type">{{ device.type }}</span>
+              <div class="device-meta">
+                <span class="device-last-label">Update terakhir</span>
+                <span class="device-last">{{ device.lastSeen }}</span>
+              </div>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
 
-    <!-- Confirmation Modal -->
-    <div v-if="showConfirmModal" class="modal-overlay" @click.self="cancelConfirm">
-      <div class="confirm-modal">
-        <h3>{{ confirmModalTitle }}</h3>
-        <p>{{ confirmModalMessage }}</p>
-        <div class="modal-buttons">
-          <button class="modal-btn cancel" @click="cancelConfirm">Batal</button>
-          <button class="modal-btn confirm" @click="executeConfirmedAction">{{ confirmModalAction }}</button>
+      <section v-if="activeSection === 'alerts'" class="section">
+        <div class="panel alert-panel">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">🔔 Pengaturan Alert & Threshold</h2>
+              <p class="panel-desc">Atur batas aman setiap parameter dan pantau status sensor secara langsung.</p>
+            </div>
+            <div class="alert-summary" :class="activeAlertCount > 0 ? 'danger' : 'ok'">
+              <span class="alert-summary-dot"></span>
+              <span>{{ activeAlertCount > 0 ? `${activeAlertCount} alert aktif` : 'Semua parameter normal' }}</span>
+            </div>
+          </div>
+          <div class="alert-grid">
+            <div v-for="alert in alertSettings" :key="alert.key" class="alert-card" :class="getAlertStatus(alert)">
+              <div class="alert-card-top">
+                <div class="alert-header">
+                  <span class="alert-icon-wrap">
+                    <span class="alert-icon">{{ alert.icon }}</span>
+                  </span>
+                  <div class="alert-header-copy">
+                    <strong>{{ alert.label }}</strong>
+                    <span class="alert-current">Saat ini {{ formatAlertValue(alert) }}</span>
+                  </div>
+                </div>
+                <div class="alert-badge" :class="getAlertStatus(alert)">
+                  {{ getAlertBadgeText(alert) }}
+                </div>
+              </div>
+              <div class="alert-inputs">
+                <div class="input-group">
+                  <label>Min</label>
+                  <input type="number" v-model.number="alert.min" :step="alert.step" />
+                </div>
+                <div class="input-group">
+                  <label>Max</label>
+                  <input type="number" v-model.number="alert.max" :step="alert.step" />
+                </div>
+              </div>
+              <div class="alert-status" :class="getAlertStatus(alert)">
+                {{ getAlertStatusText(alert) }}
+              </div>
+            </div>
+          </div>
+          <div class="panel-actions alert-actions">
+            <span class="panel-note">Threshold ini dipakai sebagai batas visual monitoring di dashboard admin.</span>
+            <button class="btn-primary" @click="saveAlertSettings">💾 Simpan Pengaturan</button>
+          </div>
         </div>
-      </div>
-    </div>
+      </section>
+
+      <section v-if="activeSection === 'settings'" class="section">
+        <div class="panel">
+          <h2 class="panel-title">⚙️ Pengaturan Sistem</h2>
+          <div class="settings-list">
+            <div class="setting-row">
+              <div class="setting-info">
+                <strong>Polling Interval</strong>
+                <span>Interval pengambilan data dari Azure (detik)</span>
+              </div>
+              <input type="number" v-model.number="systemSettings.pollingInterval" min="1" max="60" class="setting-input" />
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <strong>Tarif Listrik</strong>
+                <span>Tarif PLN per kWh (Rp)</span>
+              </div>
+              <input type="number" v-model.number="systemSettings.tariff" min="0" step="0.01" class="setting-input" />
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <strong>Target Bulanan</strong>
+                <span>Target konsumsi energi bulanan (kWh)</span>
+              </div>
+              <input type="number" v-model.number="systemSettings.monthlyTarget" min="0" class="setting-input" />
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <strong>Kapasitas Ruangan</strong>
+                <span>Jumlah maksimum orang dalam ruangan</span>
+              </div>
+              <input type="number" v-model.number="systemSettings.roomCapacity" min="1" class="setting-input" />
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <strong>Azure Function URL</strong>
+                <span>Endpoint API untuk Azure Functions</span>
+              </div>
+              <input type="text" :value="azureFunctionUrl" class="setting-input wide" disabled />
+            </div>
+            <div class="setting-row">
+              <div class="setting-info">
+                <strong>Demo Mode</strong>
+                <span>Gunakan data dummy jika backend tidak tersedia</span>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" v-model="systemSettings.demoMode" />
+                <span class="toggle-slider"></span>
+              </label>
+            </div>
+          </div>
+          <div class="panel-actions">
+            <button class="btn-primary" @click="saveSystemSettings">💾 Simpan Pengaturan</button>
+            <button class="btn-outline" @click="clearLocalCache">🗑️ Clear Cache</button>
+          </div>
+        </div>
+
+        <div class="panel system-info-panel">
+          <div class="panel-head">
+            <div>
+              <h2 class="panel-title">ℹ️ Informasi Sistem</h2>
+              <p class="panel-desc">Ringkasan stack teknologi yang menopang dashboard, data pipeline, dan perangkat IoT.</p>
+            </div>
+            <div class="system-stack-pill">
+              <span class="system-stack-dot"></span>
+              <span>{{ systemInfoItems.length }} komponen inti</span>
+            </div>
+          </div>
+          <div class="info-grid">
+            <div v-for="item in systemInfoItems" :key="item.label" class="info-item" :class="item.tone">
+              <div class="info-item-head">
+                <span class="info-icon">{{ item.icon }}</span>
+                <span class="info-label">{{ item.label }}</span>
+              </div>
+              <strong>{{ item.value }}</strong>
+              <span class="info-note">{{ item.note }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
   </div>
 </template>
 
-<script>
+<script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import EnergyManagement from './EnergyManagement.vue'
+import HistoricalAnalytics from './HistoricalAnalytics.vue'
+import { useMQTT } from '../composables/useMQTT'
 import { AZURE_FUNCTION_URL } from '../lib/appConfig'
 
-// RPi local API address (from CLAUDE.md)
-const RPI_API_URL = import.meta.env.VITE_RPI_API_URL || 'http://192.168.1.7:5001'
-const ADMIN_API_KEY = import.meta.env.VITE_RPI_ADMIN_KEY || 'digital-twin-admin-key'
+const props = defineProps({
+  isDarkMode: { type: Boolean, default: false },
+  user: { type: Object, default: null }
+})
 
-export default {
-  name: 'AdminDashboard',
-  props: {
-    isDarkMode: {
-      type: Boolean,
-      default: false
-    }
-  },
-  setup() {
-    // Config
-    const esp32DeviceId = ref(null)
-    const rpiAddress = ref('192.168.1.7')
+const emit = defineEmits(['toggle-theme', 'logout', 'go-dashboard'])
 
-    // Auto-refresh
-    const autoRefreshSeconds = 30
-    const refreshCountdown = ref(0)
-    let refreshTimer = null
+// Data
+const { mqttConnected, sensorData, connectMQTT, disconnectMQTT } = useMQTT()
 
-    // ESP32 State
-    const esp32Health = ref({
-      temp: null,
-      heap: null,
-      rssi: null,
-      uptime: null
-    })
-    const isLoadingEsp32 = ref(false)
-    const isSendingCommand = ref(false)
-    const sleepModeEnabled = ref(false)
-    const sleepDuration = ref(60000)
-    const commandResult = ref(null)
+const activeSection = ref('overview')
+const isMobileMenuOpen = ref(false)
+const azureFunctionUrl = AZURE_FUNCTION_URL
 
-    // Services State
-    const services = ref([
-      { name: 'yolo_cam', displayName: 'YOLO Camera', port: 5000, status: 'unknown' },
-      { name: 'local_api', displayName: 'Local API', port: 5001, status: 'unknown' },
-      { name: 'influxdb', displayName: 'InfluxDB', port: 8086, status: 'unknown' },
-      { name: 'influxdb-logger', displayName: 'InfluxDB Logger', port: null, status: 'unknown' },
-      { name: 'ml-pipeline', displayName: 'ML Pipeline', port: null, status: 'unknown' },
-      { name: 'grafana-server', displayName: 'Grafana', port: 3000, status: 'unknown' }
-    ])
-    const isControllingService = ref(false)
+const selectSection = (id) => {
+  activeSection.value = id
+  isMobileMenuOpen.value = false
+}
 
-    // System State
-    const rpiStats = ref({
-      cpu: 0,
-      memory: 0,
-      disk: 0
-    })
+const navItems = [
+  { id: 'overview', icon: '🏠', label: 'Overview' },
+  { id: 'energy', icon: '💰', label: 'Energy' },
+  { id: 'analytics', icon: '📊', label: 'Analytics' },
+  { id: 'devices', icon: '🔧', label: 'Devices' },
+  { id: 'alerts', icon: '🔔', label: 'Alerts' },
+  { id: 'settings', icon: '⚙️', label: 'Settings' }
+]
 
-    // Modal State
-    const showConfirmModal = ref(false)
-    const confirmModalTitle = ref('')
-    const confirmModalMessage = ref('')
-    const confirmModalAction = ref('')
-    let pendingAction = null
+const currentPageTitle = computed(() => {
+  const map = {
+    overview: '🏠 Dashboard Overview',
+    energy: '💰 Energy Management',
+    analytics: '📊 Historical Analytics',
+    devices: '🔧 Device Management',
+    alerts: '🔔 Alert Settings',
+    settings: '⚙️ System Settings'
+  }
+  return map[activeSection.value] || 'Admin'
+})
 
-    // Last update
-    const lastUpdateAt = ref(null)
-    const lastUpdateText = computed(() => {
-      if (!lastUpdateAt.value) return 'Belum update'
-      return lastUpdateAt.value.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })
-    })
+const currentPageSubtitle = computed(() => {
+  const map = {
+    overview: 'Ringkasan sistem dan status sensor realtime',
+    energy: 'Analisis konsumsi energi & rekomendasi AI',
+    analytics: 'Grafik historis dan tren data sensor',
+    devices: 'Status dan manajemen perangkat IoT',
+    alerts: 'Konfigurasi threshold dan notifikasi',
+    settings: 'Pengaturan sistem dan konfigurasi'
+  }
+  return map[activeSection.value] || ''
+})
 
-    // System status
-    const systemStatusClass = computed(() => {
-      const runningCount = services.value.filter(s => s.status === 'running').length
-      if (runningCount === 0) return 'status-danger'
-      if (runningCount === services.value.length) return 'status-success'
-      return 'status-warning'
-    })
-    const systemStatusText = computed(() => {
-      const running = services.value.filter(s => s.status === 'running').length
-      return `${running}/${services.value.length} Services Active`
-    })
+const displayName = computed(() => props.user?.displayName || props.user?.email || 'Admin')
+const userInitials = computed(() => {
+  const name = displayName.value.trim()
+  if (!name) return 'AD'
+  return name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+})
 
-    // HTTP helper
-    const rpiRequest = async (endpoint, options = {}) => {
-      const url = `${RPI_API_URL}${endpoint}`
-      const headers = {
-        'Content-Type': 'application/json',
-        'X-API-Key': ADMIN_API_KEY,
-        ...options.headers
-      }
-      try {
-        const response = await fetch(url, { ...options, headers })
-        if (!response.ok) {
-          const err = await response.json()
-          throw new Error(err.error || 'Request failed')
-        }
-        return response.json()
-      } catch (error) {
-        console.error(`RPi API Error (${endpoint}):`, error)
-        throw error
-      }
-    }
+// Devices (Reactive to MQTT connection)
+const devices = computed(() => [
+  { id: 'ESP32-001', name: 'ESP32 Sensor Node', type: 'Suhu, Kelembaban, Listrik', icon: '🌡️', status: mqttConnected.value ? 'Online' : 'Offline', statusClass: mqttConnected.value ? 'online' : 'offline', lastSeen: mqttConnected.value ? 'Baru saja' : 'N/A' },
+  { id: 'RPi-CAM-001', name: 'Raspberry Pi Camera', type: 'People Counter (YOLO)', icon: '📹', status: 'Online', statusClass: 'online', lastSeen: 'Baru saja' },
+  { id: 'AC-UNIT-001', name: 'AC Unit (Smart)', type: 'Pendingin Ruangan', icon: '❄️', status: 'Standby', statusClass: 'warning', lastSeen: '5 menit lalu' },
+  { id: 'GW-MQTT-001', name: 'MQTT Gateway', type: 'Azure Cloud Sync', icon: '📡', status: mqttConnected.value ? 'Connected' : 'Disconnected', statusClass: mqttConnected.value ? 'online' : 'offline', lastSeen: 'N/A' }
+])
 
-    // Methods
-    const getStatusLabel = (status) => {
-      const labels = {
-        active: 'Running',
-        inactive: 'Stopped',
-        failed: 'Failed',
-        activating: 'Starting',
-        deactivating: 'Stopping',
-        unknown: 'Unknown'
-      }
-      return labels[status] || status || 'Unknown'
-    }
+const onlineDeviceCount = computed(() => (
+  devices.value.filter(device => device.statusClass === 'online').length
+))
 
-    const getRssiClass = (rssi) => {
-      if (!rssi) return ''
-      if (rssi >= -50) return 'excellent'
-      if (rssi >= -70) return 'good'
-      if (rssi >= -80) return 'fair'
-      return 'poor'
-    }
+const systemInfoItems = [
+  { label: 'Frontend', value: 'Vue 3 + Vite', note: 'UI utama dan bundler aplikasi', icon: '🧩', tone: 'cyan' },
+  { label: '3D Engine', value: 'Babylon.js', note: 'Render digital twin interaktif', icon: '🧊', tone: 'blue' },
+  { label: 'Chart', value: 'Chart.js + vue-chartjs', note: 'Visualisasi histori dan tren', icon: '📈', tone: 'violet' },
+  { label: 'Auth', value: 'Firebase Google', note: 'Autentikasi akun operator dan admin', icon: '🔐', tone: 'amber' },
+  { label: 'Backend', value: 'Azure Functions', note: 'API telemetry dan pengolahan data', icon: '☁️', tone: 'cyan' },
+  { label: 'Storage', value: 'Azure Table Storage', note: 'Penyimpanan histori sensor', icon: '🗄️', tone: 'slate' },
+  { label: 'ML', value: 'Python Flask API', note: 'Serving model dan prediksi energi', icon: '🧠', tone: 'rose' },
+  { label: 'IoT', value: 'ESP32 + RPi', note: 'Perangkat edge dan kamera lapangan', icon: '📡', tone: 'emerald' }
+]
 
-    const formatUptime = (seconds) => {
-      if (!seconds) return 'N/A'
-      const d = Math.floor(seconds / 86400)
-      const h = Math.floor((seconds % 86400) / 3600)
-      const m = Math.floor((seconds % 3600) / 60)
-      if (d > 0) return `${d}d ${h}h`
-      if (h > 0) return `${h}h ${m}m`
-      return `${m}m`
-    }
+// Alert settings
+const alertSettings = ref([
+  { key: 'temperature', icon: '🌡️', label: 'Suhu (°C)', min: 15, max: 30, step: 0.5, currentValue: () => sensorData.value.temperature },
+  { key: 'humidity', icon: '💧', label: 'Kelembaban (%)', min: 30, max: 80, step: 1, currentValue: () => sensorData.value.humidity },
+  { key: 'voltage', icon: '🔌', label: 'Tegangan (V)', min: 180, max: 250, step: 1, currentValue: () => sensorData.value.voltage },
+  { key: 'power', icon: '⚡', label: 'Daya (W)', min: 0, max: 4000, step: 10, currentValue: () => sensorData.value.power },
+  { key: 'people', icon: '👥', label: 'Jumlah Orang', min: 0, max: 20, step: 1, currentValue: () => sensorData.value.peopleCount || 0 }
+])
 
-    const showCommandResult = (message, type = 'info') => {
-      commandResult.value = { message, type }
-      setTimeout(() => {
-        commandResult.value = null
-      }, 5000)
-    }
+const activeAlertCount = computed(() => (
+  alertSettings.value.filter(alert => getAlertStatus(alert) === 'alert-danger').length
+))
 
-    // ESP32 Methods
-    const refreshEsp32Health = async () => {
-      isLoadingEsp32.value = true
-      try {
-        // Get ESP32 health from RPi local API
-        const response = await rpiRequest('/api/admin/esp32/health')
-        if (response.success && response.data) {
-          const data = response.data
-          // Only update if we have actual data from ESP32
-          if (data.esp32_temp_c !== null || data.free_heap_bytes !== null) {
-            esp32Health.value = {
-              temp: data.esp32_temp_c,
-              heap: data.free_heap_bytes,
-              rssi: data.wifi_rssi_dbm,
-              uptime: data.uptime_seconds
-            }
-          } else {
-            // ESP32 not sending data yet
-            showCommandResult('ESP32 belum mengirim data. Pastikan ESP32 terhubung dan mengirim data.', 'info')
-          }
-        }
-        lastUpdateAt.value = new Date()
-      } catch (error) {
-        console.warn('Failed to get ESP32 health from RPi:', error.message)
-        showCommandResult('Tidak dapat terhubung ke RPi. Cek koneksi.', 'error')
-      } finally {
-        isLoadingEsp32.value = false
-      }
-    }
+const getAlertCurrentValue = (alert) => {
+  const value = typeof alert.currentValue === 'function' ? alert.currentValue() : 0
+  return typeof value === 'number' && !Number.isNaN(value) ? value : 0
+}
 
-    const sendEsp32Command = async (command) => {
-      isSendingCommand.value = true
-      try {
-        const payload = { command }
-        if (command === 'sleep') {
-          payload.params = { duration_ms: sleepDuration.value }
-        }
+const formatAlertValue = (alert) => {
+  const value = getAlertCurrentValue(alert)
+  return alert.step < 1 ? value.toFixed(1) : value.toFixed(0)
+}
 
-        // Try RPi first, then Azure
-        try {
-          const response = await rpiRequest('/api/admin/esp32/command', {
-            method: 'POST',
-            body: JSON.stringify(payload)
-          })
-          showCommandResult(response.data.message || 'Command sent', 'success')
-        } catch {
-          // Fallback to Azure IoT Hub
-          const response = await fetch(`${AZURE_FUNCTION_URL}/device/command`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ deviceId: esp32DeviceId.value, ...payload })
-          })
-          const result = await response.json()
-          showCommandResult(result.message || 'Command sent via Azure', 'success')
-        }
-        lastUpdateAt.value = new Date()
-      } catch (error) {
-        showCommandResult('Gagal mengirim command: ' + error.message, 'error')
-      } finally {
-        isSendingCommand.value = false
-      }
-    }
+const getAlertStatus = (alert) => {
+  const val = getAlertCurrentValue(alert)
+  if (val < alert.min || val > alert.max) return 'alert-danger'
+  return 'alert-ok'
+}
 
-    const toggleSleepMode = () => {
-      if (sleepModeEnabled.value) {
-        sendEsp32Command('sleep')
-      } else {
-        sendEsp32Command('wake')
-      }
-    }
+const getAlertBadgeText = (alert) => {
+  return getAlertStatus(alert) === 'alert-danger' ? 'Perlu perhatian' : 'Stabil'
+}
 
-    // Service Control Methods
-    const refreshServicesStatus = async () => {
-      try {
-        const response = await rpiRequest('/api/admin/services')
-        if (response.success && response.data) {
-          services.value = response.data.services.map(svc => ({
-            // Map service names (backend uses hyphen, frontend uses underscore)
-            name: svc.name,
-            displayName: svc.displayName,
-            port: svc.port,
-            status: svc.status === 'active' ? 'running' :
-                   svc.status === 'inactive' ? 'stopped' : svc.status
-          }))
-        }
-        lastUpdateAt.value = new Date()
-      } catch (error) {
-        console.warn('Failed to get services from RPi:', error.message)
-        // Fallback: mark known services as running
-        services.value = services.value.map(s => ({
-          ...s,
-          status: s.name === 'yolo_cam' || s.name === 'influxdb' ||
-                 s.name === 'grafana-server' || s.name === 'ml-pipeline' ? 'running' : 'unknown'
-        }))
-      }
-    }
+const getAlertStatusText = (alert) => {
+  const val = getAlertCurrentValue(alert)
+  if (val < alert.min) return `⚠️ Di bawah minimum (${val})`
+  if (val > alert.max) return `⚠️ Di atas maximum (${val})`
+  return `✅ Normal (${typeof val === 'number' ? val.toFixed(1) : val})`
+}
 
-    const controlService = async (serviceName, action) => {
-      isControllingService.value = true
-      try {
-        const response = await rpiRequest('/api/admin/service-control', {
-          method: 'POST',
-          body: JSON.stringify({ service: serviceName, action })
-        })
-        if (response.success) {
-          const newStatus = response.data.status === 'active' ? 'running' : response.data.status
-          const svc = services.value.find(s => s.name === serviceName)
-          if (svc) svc.status = newStatus
-          showCommandResult(`${action} ${serviceName}: ${newStatus}`, 'success')
-        }
-      } catch (error) {
-        showCommandResult('Gagal mengontrol service: ' + error.message, 'error')
-      } finally {
-        isControllingService.value = false
-      }
-    }
+const saveAlertSettings = () => {
+  localStorage.setItem('admin_alert_settings', JSON.stringify(alertSettings.value))
+  addLog('🔔', 'Alert settings saved')
+  alert('Pengaturan alert berhasil disimpan!')
+}
 
-    // System Control Methods
-    const refreshRpiStats = async () => {
-      try {
-        const response = await rpiRequest('/api/admin/system')
-        if (response.success && response.data) {
-          rpiStats.value = {
-            cpu: response.data.health?.cpu_percent || 0,
-            memory: response.data.health?.memory_percent || 0,
-            disk: response.data.health?.disk_percent || 0
-          }
-        }
-      } catch (error) {
-        console.warn('Failed to get RPi stats:', error.message)
-      }
-    }
+// System settings
+const systemSettings = ref({
+  pollingInterval: 5,
+  tariff: 1444.70,
+  monthlyTarget: 100,
+  roomCapacity: 20,
+  demoMode: false
+})
 
-    const confirmReboot = () => {
-      confirmModalTitle.value = 'Konfirmasi Reboot'
-      confirmModalMessage.value = 'Raspberry Pi akan di-reboot. Koneksi akan terputus sementara. Lanjutkan?'
-      confirmModalAction.value = 'Reboot'
-      pendingAction = 'reboot'
-      showConfirmModal.value = true
-    }
+const saveSystemSettings = () => {
+  localStorage.setItem('admin_system_settings', JSON.stringify(systemSettings.value))
+  addLog('⚙️', 'System settings saved')
+  alert('Pengaturan sistem berhasil disimpan!')
+}
 
-    const confirmShutdown = () => {
-      confirmModalTitle.value = 'Konfirmasi Shutdown'
-      confirmModalMessage.value = 'Raspberry Pi akan dimatikan. Anda perlu menyalakan ulang secara manual. Lanjutkan?'
-      confirmModalAction.value = 'Shutdown'
-      pendingAction = 'shutdown'
-      showConfirmModal.value = true
-    }
-
-    const cancelConfirm = () => {
-      showConfirmModal.value = false
-      pendingAction = null
-    }
-
-    const executeConfirmedAction = async () => {
-      showConfirmModal.value = false
-      try {
-        if (pendingAction === 'reboot') {
-          const response = await rpiRequest('/api/admin/system', {
-            method: 'POST',
-            body: JSON.stringify({ action: 'reboot' })
-          })
-          showCommandResult(response.data?.message || 'Reboot initiated', 'success')
-        } else if (pendingAction === 'shutdown') {
-          const response = await rpiRequest('/api/admin/system', {
-            method: 'POST',
-            body: JSON.stringify({ action: 'shutdown' })
-          })
-          showCommandResult(response.data?.message || 'Shutdown initiated', 'success')
-        }
-      } catch (error) {
-        showCommandResult('Gagal execute action: ' + error.message, 'error')
-      } finally {
-        pendingAction = null
-      }
-    }
-
-    // Auto-refresh
-    const startAutoRefresh = () => {
-      refreshCountdown.value = autoRefreshSeconds
-      refreshTimer = setInterval(() => {
-        refreshCountdown.value--
-        if (refreshCountdown.value <= 0) {
-          refreshEsp32Health()
-          refreshServicesStatus()
-          refreshRpiStats()
-          refreshCountdown.value = autoRefreshSeconds
-        }
-      }, 1000)
-    }
-
-    onMounted(() => {
-      // Get ESP32 device ID from config
-      esp32DeviceId.value = import.meta.env.VITE_IOT_HUB_DEVICE_ID || 'esp32-sensor-01'
-
-      // Initial load
-      refreshEsp32Health()
-      refreshServicesStatus()
-      refreshRpiStats()
-      startAutoRefresh()
-    })
-
-    onUnmounted(() => {
-      if (refreshTimer) {
-        clearInterval(refreshTimer)
-      }
-    })
-
-    return {
-      // Config
-      esp32DeviceId,
-      rpiAddress,
-
-      // ESP32
-      esp32Health,
-      isLoadingEsp32,
-      isSendingCommand,
-      sleepModeEnabled,
-      sleepDuration,
-      commandResult,
-      refreshEsp32Health,
-      sendEsp32Command,
-      toggleSleepMode,
-
-      // Services
-      services,
-      isControllingService,
-      controlService,
-      getStatusLabel,
-
-      // System
-      rpiStats,
-      confirmReboot,
-      confirmShutdown,
-
-      // Modal
-      showConfirmModal,
-      confirmModalTitle,
-      confirmModalMessage,
-      confirmModalAction,
-      cancelConfirm,
-      executeConfirmedAction,
-
-      // Utils
-      lastUpdateText,
-      systemStatusClass,
-      systemStatusText,
-      getRssiClass,
-      formatUptime,
-
-      // Auto-refresh
-      autoRefreshSeconds,
-      refreshCountdown
-    }
+const clearLocalCache = () => {
+  if (confirm('Yakin ingin menghapus semua cache lokal?')) {
+    localStorage.removeItem('sensor_last_data')
+    localStorage.removeItem('digitaltwin_historical_data')
+    localStorage.removeItem('digitaltwin_energy_management')
+    addLog('🗑️', 'Local cache cleared')
+    alert('Cache lokal berhasil dihapus!')
   }
 }
+
+// Activity log
+const activityLog = ref([])
+const addLog = (icon, message) => {
+  activityLog.value.unshift({
+    icon,
+    message,
+    time: new Date().toLocaleTimeString('id-ID')
+  })
+  if (activityLog.value.length > 50) activityLog.value.pop()
+}
+
+// Lifecycle
+onMounted(() => {
+  connectMQTT()
+  addLog('🟢', 'Admin panel opened')
+  addLog('📡', `Azure polling started`)
+
+  // Load saved settings
+  try {
+    const savedSystem = localStorage.getItem('admin_system_settings')
+    if (savedSystem) systemSettings.value = { ...systemSettings.value, ...JSON.parse(savedSystem) }
+
+    const savedAlerts = localStorage.getItem('admin_alert_settings')
+    if (savedAlerts) alertSettings.value = JSON.parse(savedAlerts)
+  } catch (e) { /* ignore */ }
+})
+
+onUnmounted(() => {
+  disconnectMQTT()
+})
 </script>
 
 <style scoped>
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Sora:wght@500;600;700;800&display=swap');
-
-.admin-dashboard {
-  --accent: #8b5cf6;
-  --accent-dark: #7c3aed;
-  --bg: #f8fafc;
-  --surface: #ffffff;
-  --surface-2: #f1f5f9;
-  --border: #e2e8f0;
-  --text: #0f172a;
-  --text-2: #475569;
-  --text-3: #94a3b8;
-  --success: #22c55e;
-  --danger: #ef4444;
-  --warning: #f59e0b;
-
-  font-family: 'IBM Plex Sans', sans-serif;
-  padding: 24px;
-  animation: fadeUp 0.4s ease;
+/* ===== Layout ===== */
+.admin {
+  display: flex;
+  min-height: 100vh;
+  background: #f1f5f9;
+  color: #1e293b;
+  transition: background 0.3s, color 0.3s;
+}
+.admin.dark {
+  background: #0b0f19;
+  color: #e2e8f0;
 }
 
+/* ===== Sidebar ===== */
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: #fff;
+  border-right: 1px solid rgba(0,0,0,0.06);
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  transition: background 0.3s, border-color 0.3s;
+}
+.dark .sidebar {
+  background: #111827;
+  border-right-color: rgba(255,255,255,0.06);
+}
+
+/* ===== Sidebar Brand Custom (Mirip Screenshot) ===== */
+.sidebar-brand {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 16px 14px 10px;
+  padding: 16px 18px;
+  border-radius: 24px;
+  background: linear-gradient(135deg, #f4faff, #e6f4fe);
+  border: 1px solid rgba(186, 230, 253, 0.4);
+  box-shadow: 0 4px 15px rgba(14, 116, 144, 0.03);
+}
+.dark .sidebar-brand {
+  background: linear-gradient(145deg, rgba(8,47,73,0.38), rgba(15,23,42,0.96));
+  border-color: rgba(34,211,238,0.16);
+  box-shadow: 0 16px 30px rgba(0,0,0,0.28);
+}
+
+.brand-logo-wrap {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 2px solid #eef7ff;
+  box-shadow: 0 0 0 2px #e0f2fe, 0 4px 12px rgba(186, 230, 253, 0.4);
+  flex-shrink: 0;
+}
+.dark .brand-logo-wrap {
+  background: #0f172a;
+  border-color: #1e293b;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.brand-logo {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
+}
+
+.brand-title {
+  font-weight: 900;
+  font-size: 1.45rem;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: #0f172a; /* Warna teks biru super gelap (slate) */
+  /* Shadow disesuaikan dengan warna aksen cyan tema Anda */
+  text-shadow: 1.5px 1.5px 0px rgba(6, 182, 212, 0.3); 
+}
+
+.dark .brand-title {
+  color: #f8fafc;
+  /* Shadow cyan yang lebih terang untuk dark mode */
+  text-shadow: 1.5px 1.5px 0px rgba(34, 211, 238, 0.4);
+}
+
+.brand-role {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  white-space: nowrap;
+  color: #0091a1;
+  background: #daf1fd;
+  border: 1px solid #bce6fd;
+}
+.dark .brand-role {
+  color: #67e8f9;
+  background: rgba(8,47,73,0.76);
+  border-color: rgba(34,211,238,0.22);
+}
+
+.menu-close-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border: 1px solid rgba(15,23,42,0.08);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.76);
+  color: #334155;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.menu-close-btn:hover {
+  transform: translateY(-1px);
+  background: rgba(239,68,68,0.08);
+  color: #ef4444;
+  box-shadow: 0 8px 16px rgba(239,68,68,0.12);
+}
+.dark .menu-close-btn {
+  border-color: rgba(255,255,255,0.08);
+  background: rgba(15,23,42,0.85);
+  color: #e2e8f0;
+}
+.menu-close-btn span {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.nav {
+  flex: 1;
+  padding: 14px 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.72);
+  color: #0f172a;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease, background 0.22s ease, color 0.22s ease;
+  text-align: left;
+  box-shadow: 0 6px 14px rgba(15, 23, 42, 0.04);
+}
+.dark .nav-item {
+  background: rgba(15,23,42,0.42);
+  color: #e5eef9;
+  border-color: rgba(255,255,255,0.03);
+}
+.nav-item:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, rgba(6,182,212,0.1), rgba(255,255,255,0.95));
+  border-color: rgba(6,182,212,0.14);
+  box-shadow: 0 12px 24px rgba(6,182,212,0.1);
+}
+.dark .nav-item:hover {
+  background: linear-gradient(135deg, rgba(34,211,238,0.12), rgba(15,23,42,0.9));
+  border-color: rgba(34,211,238,0.14);
+  box-shadow: 0 14px 24px rgba(0,0,0,0.2);
+}
+.nav-item.active {
+  background: linear-gradient(135deg, rgba(6,182,212,0.16), rgba(99,102,241,0.08), rgba(255,255,255,0.9));
+  border-color: rgba(6,182,212,0.18);
+  color: #06b6d4;
+  box-shadow: 0 16px 28px rgba(6,182,212,0.14);
+}
+.dark .nav-item.active {
+  color: #67e8f9;
+  background: linear-gradient(135deg, rgba(34,211,238,0.14), rgba(99,102,241,0.08), rgba(15,23,42,0.9));
+  border-color: rgba(34,211,238,0.18);
+}
+.nav-item.active::after {
+  content: '';
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: translateY(-50%);
+  box-shadow: 0 0 0 6px rgba(6,182,212,0.08);
+}
+.dark .nav-item.active::after {
+  box-shadow: 0 0 0 6px rgba(34,211,238,0.08);
+}
+.nav-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 1.2rem;
+  background: linear-gradient(145deg, rgba(255,255,255,0.92), rgba(240,249,255,0.96));
+  border: 1px solid rgba(6,182,212,0.12);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 8px 16px rgba(15,23,42,0.05);
+}
+.dark .nav-icon {
+  background: linear-gradient(145deg, rgba(15,23,42,0.95), rgba(17,24,39,0.9));
+  border-color: rgba(34,211,238,0.1);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.03), 0 8px 16px rgba(0,0,0,0.18);
+}
+.nav-label {
+  flex: 1;
+}
+
+.sidebar-footer {
+  padding: 18px 14px 16px;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  background: linear-gradient(180deg, rgba(248,250,252,0.82), rgba(255,255,255,0.96));
+}
+.dark .sidebar-footer { 
+  border-top-color: rgba(255,255,255,0.06);
+  background: linear-gradient(180deg, rgba(15,23,42,0.5), rgba(17,24,39,0.82));
+}
+
+.admin-chip {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.92), rgba(248,250,252,0.95));
+  border: 1px solid rgba(6,182,212,0.12);
+  box-shadow: 0 10px 24px rgba(15,23,42,0.06);
+}
+.dark .admin-chip {
+  background: linear-gradient(145deg, rgba(15,23,42,0.9), rgba(17,24,39,0.92));
+  border-color: rgba(34,211,238,0.1);
+  box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+}
+.admin-avatar {
+  width: 48px; height: 48px;
+  border-radius: 16px;
+  object-fit: cover;
+  border: 2px solid rgba(6,182,212,0.2);
+  flex-shrink: 0;
+  box-shadow: 0 8px 18px rgba(15,23,42,0.08);
+}
+.admin-avatar-fallback {
+  display: flex; align-items: center; justify-content: center;
+  background: linear-gradient(135deg, rgba(6,182,212,0.16), rgba(99,102,241,0.14));
+  font-weight: 800;
+  font-size: 1rem;
+  color: #06b6d4;
+  letter-spacing: 0.05em;
+}
+.admin-info { display: flex; flex-direction: column; min-width: 0; }
+.admin-name { font-weight: 900; font-size: 1rem; color: var(--text-primary); line-height: 1.15; }
+.admin-email { font-size: 0.8rem; color: #94a3b8; margin-top: 4px; }
+
+.sidebar-actions {
+  display: flex;
+}
+.action-btn {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(255,255,255,0.95), rgba(248,250,252,0.92));
+  color: #475569;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 800;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  box-shadow: 0 10px 22px rgba(15,23,42,0.06);
+}
+.dark .action-btn { 
+  background: linear-gradient(145deg, rgba(15,23,42,0.92), rgba(17,24,39,0.9)); 
+  border-color: rgba(255,255,255,0.1);
+  color: #cbd5e1;
+}
+.action-btn:hover { 
+  background: linear-gradient(145deg, rgba(255,255,255,1), rgba(240,249,255,0.96));
+  color: #06b6d4;
+  border-color: #06b6d4;
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(6,182,212,0.14);
+}
+.dark .action-btn:hover {
+  background: linear-gradient(145deg, rgba(6,182,212,0.12), rgba(15,23,42,0.92));
+}
+.action-btn.logout:hover { 
+  background: linear-gradient(145deg, rgba(254,242,242,0.96), rgba(255,255,255,0.96)); 
+  border-color: rgba(239,68,68,0.4); 
+  color: #ef4444; 
+  box-shadow: 0 14px 28px rgba(239,68,68,0.14);
+}
+.dark .action-btn.logout:hover {
+  background: linear-gradient(145deg, rgba(127,29,29,0.26), rgba(15,23,42,0.94));
+}
+.action-btn span {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: rgba(6,182,212,0.08);
+}
+.dark .action-btn span {
+  background: rgba(34,211,238,0.1);
+}
+
+/* ===== Main Content ===== */
+.main-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 32px;
+  background: #fff;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.dark .topbar { background: #111827; border-bottom-color: rgba(255,255,255,0.06); }
+.page-title { font-size: 1.35rem; font-weight: 800; margin: 0; }
+.page-subtitle { font-size: 0.85rem; color: #94a3b8; margin: 0; }
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.status-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 16px; border-radius: 999px;
+  font-size: 0.82rem; font-weight: 700;
+}
+.status-pill.online { background: rgba(16,185,129,0.12); color: #059669; }
+.status-pill.offline { background: rgba(239,68,68,0.12); color: #ef4444; }
+.dark .status-pill.online { color: #34d399; }
+.dark .status-pill.offline { color: #fca5a5; }
+.status-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: currentColor;
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.theme-toggle {
+  width: 40px; height: 40px;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 12px;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.1rem;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.2s;
+}
+.dark .theme-toggle { border-color: rgba(255,255,255,0.08); }
+.theme-toggle:hover { background: rgba(6,182,212,0.08); }
+
+/* ===== Sections ===== */
+.section {
+  padding: 24px 32px 40px;
+  animation: fadeUp 0.3s ease;
+}
 @keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(12px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-.hero-banner { margin-bottom: 24px; }
-
-.hero-kicker {
-  display: inline-block;
-  padding: 6px 12px;
-  background: rgba(139, 92, 246, 0.1);
-  border: 1px solid rgba(139, 92, 246, 0.2);
-  border-radius: 20px;
-  font-family: 'Sora', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  color: var(--accent);
-  letter-spacing: 0.05em;
-  margin-bottom: 12px;
-}
-
-.hero-banner h2 {
-  font-family: 'Sora', sans-serif;
-  font-size: 1.8rem;
-  font-weight: 700;
-  color: var(--text);
-  margin: 0 0 6px 0;
-}
-
-.hero-banner p {
-  color: var(--text-2);
-  margin: 0 0 16px 0;
-}
-
-.hero-meta {
+/* ===== Overview ===== */
+.overview-head {
   display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 24px 28px;
+  margin-bottom: 24px;
+  border-radius: 24px;
+  border: 1px solid rgba(6,182,212,0.12);
+  background:
+    radial-gradient(circle at top right, rgba(56,189,248,0.16), transparent 34%),
+    linear-gradient(145deg, rgba(255,255,255,0.98), rgba(240,249,255,0.92));
+  box-shadow: 0 18px 40px rgba(14,116,144,0.08);
 }
-
-.meta-badge {
+.dark .overview-head {
+  border-color: rgba(103,232,249,0.12);
+  background:
+    radial-gradient(circle at top right, rgba(34,211,238,0.14), transparent 36%),
+    linear-gradient(145deg, rgba(15,23,42,0.96), rgba(15,23,42,0.88));
+  box-shadow: 0 18px 40px rgba(2,6,23,0.32);
+}
+.overview-copy {
+  max-width: 760px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.overview-kicker {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  width: fit-content;
   padding: 6px 12px;
-  background: var(--surface-2);
-  border-radius: 20px;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--text-2);
-}
-
-.status-badge.status-success { background: rgba(34, 197, 94, 0.1); color: var(--success); }
-.status-badge.status-warning { background: rgba(245, 158, 11, 0.1); color: var(--warning); }
-.status-badge.status-danger { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
-
-/* Auto Refresh Bar */
-.auto-refresh-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 16px;
-  background: var(--surface-2);
-  border-radius: 8px;
-  margin-bottom: 24px;
-  font-size: 12px;
-  color: var(--text-3);
-}
-
-.refresh-progress {
-  height: 4px;
-  background: var(--accent);
-  border-radius: 2px;
-  transition: width 1s linear;
-}
-
-/* Control Section */
-.control-section {
-  background: var(--surface);
-  border-radius: 12px;
-  padding: 20px;
-  margin-bottom: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--border);
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-family: 'Sora', sans-serif;
-  font-size: 1.1rem;
-  font-weight: 600;
-  color: var(--text);
-  margin: 0;
-}
-
-.section-title svg {
-  color: var(--accent);
-}
-
-.device-id {
-  font-size: 12px;
-  color: var(--text-3);
-  font-family: monospace;
-}
-
-/* ESP32 Control Grid */
-.control-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
-}
-
-.control-card {
-  background: var(--surface-2);
-  border-radius: 10px;
-  padding: 16px;
-}
-
-.control-card h4 {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
-  margin: 0 0 12px 0;
-}
-
-/* Health Card */
-.health-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-}
-
-.health-item {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.health-label {
-  font-size: 11px;
-  color: var(--text-3);
+  border-radius: 999px;
+  background: rgba(6,182,212,0.1);
+  color: #0891b2;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
 }
-
-.health-value {
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--text);
+.dark .overview-kicker {
+  background: rgba(34,211,238,0.16);
+  color: #67e8f9;
 }
-
-.health-value.warning { color: var(--warning); }
-.health-value.excellent { color: var(--success); }
-.health-value.good { color: #22c55e; }
-.health-value.fair { color: var(--warning); }
-.health-value.poor { color: var(--danger); }
-
-.refresh-health-btn {
+.overview-title {
+  margin: 0;
+  font-size: clamp(1.35rem, 2vw, 2rem);
+  line-height: 1.15;
+  font-weight: 900;
+}
+.overview-text {
+  margin: 0;
+  max-width: 58ch;
+  color: #64748b;
+  font-size: 0.98rem;
+  line-height: 1.7;
+}
+.dark .overview-text {
+  color: #94a3b8;
+}
+.overview-badges {
   display: flex;
-  align-items: center;
-  gap: 6px;
-  width: 100%;
-  padding: 10px;
-  margin-top: 12px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 13px;
-  color: var(--text-2);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.refresh-health-btn:hover:not(:disabled) {
-  background: var(--accent);
-  color: white;
-  border-color: var(--accent);
-}
-
-.refresh-health-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.spin { animation: spin 1s linear infinite; }
-@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-
-/* Commands Card */
-.command-buttons {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  margin-bottom: 16px;
-}
-
-.cmd-btn {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px 16px;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  color: var(--text);
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.cmd-btn:hover:not(:disabled) {
-  background: var(--accent);
-  color: white;
-  border-color: var(--accent);
-}
-
-.cmd-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-.sleep-control {
-  display: flex;
-  align-items: center;
-  gap: 10px;
   flex-wrap: wrap;
-}
-
-.sleep-control span {
-  font-size: 13px;
-  color: var(--text-2);
-}
-
-.toggle-switch {
-  position: relative;
-  width: 44px;
-  height: 24px;
-}
-
-.toggle-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.toggle-slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #cbd5e1;
-  transition: 0.3s;
-  border-radius: 24px;
-}
-
-.toggle-slider:before {
-  position: absolute;
-  content: "";
-  height: 18px;
-  width: 18px;
-  left: 3px;
-  bottom: 3px;
-  background-color: white;
-  transition: 0.3s;
-  border-radius: 50%;
-}
-
-.toggle-switch input:checked + .toggle-slider {
-  background-color: var(--accent);
-}
-
-.toggle-switch input:checked + .toggle-slider:before {
-  transform: translateX(20px);
-}
-
-.sleep-duration-input {
-  width: 100px;
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  font-size: 12px;
-}
-
-/* Command Result */
-.command-result {
-  padding: 12px 16px;
-  border-radius: 8px;
-  margin-top: 16px;
-  font-size: 13px;
-}
-
-.command-result.success {
-  background: rgba(34, 197, 94, 0.1);
-  color: var(--success);
-  border: 1px solid rgba(34, 197, 94, 0.2);
-}
-
-.command-result.error {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--danger);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-}
-
-.command-result.info {
-  background: rgba(139, 92, 246, 0.1);
-  color: var(--accent);
-  border: 1px solid rgba(139, 92, 246, 0.2);
-}
-
-/* Services Grid */
-.services-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-}
-
-.service-card {
-  background: var(--surface-2);
-  border-radius: 10px;
-  padding: 16px;
-}
-
-.service-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.service-info {
-  display: flex;
-  align-items: center;
+  justify-content: flex-end;
   gap: 10px;
 }
-
-.service-status-dot {
+.overview-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 46px;
+  padding: 0 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(15,23,42,0.06);
+  background: rgba(255,255,255,0.82);
+  color: #0f172a;
+  font-size: 0.88rem;
+  font-weight: 700;
+  box-shadow: 0 10px 22px rgba(15,23,42,0.06);
+}
+.dark .overview-badge {
+  border-color: rgba(255,255,255,0.08);
+  background: rgba(15,23,42,0.72);
+  color: #e2e8f0;
+}
+.overview-badge.online {
+  color: #047857;
+}
+.overview-badge.offline {
+  color: #dc2626;
+}
+.overview-badge.neutral {
+  color: #0369a1;
+}
+.dark .overview-badge.online {
+  color: #6ee7b7;
+}
+.dark .overview-badge.offline {
+  color: #fda4af;
+}
+.dark .overview-badge.neutral {
+  color: #7dd3fc;
+}
+.overview-badge-dot {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: var(--text-3);
+  background: currentColor;
+  box-shadow: 0 0 0 6px rgba(16,185,129,0.12);
+}
+.overview-badge.offline .overview-badge-dot {
+  box-shadow: 0 0 0 6px rgba(239,68,68,0.12);
+}
+.overview-badge.neutral .overview-badge-dot {
+  box-shadow: 0 0 0 6px rgba(14,165,233,0.12);
 }
 
-.service-status-dot.running { background: var(--success); }
-.service-status-dot.stopped { background: var(--danger); }
-.service-status-dot.failed { background: var(--danger); }
-
-.service-name {
-  font-weight: 600;
-  color: var(--text);
-}
-
-.service-status-text {
-  font-size: 12px;
-  color: var(--text-2);
-}
-
-.service-details {
-  margin-bottom: 12px;
-}
-
-.service-port {
-  font-size: 11px;
-  color: var(--text-3);
-  font-family: monospace;
-}
-
-.service-controls {
-  display: flex;
-  gap: 8px;
-}
-
-.svc-btn {
-  flex: 1;
-  padding: 8px;
-  border: none;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.svc-btn.start {
-  background: rgba(34, 197, 94, 0.1);
-  color: var(--success);
-}
-
-.svc-btn.start:hover:not(:disabled) {
-  background: var(--success);
-  color: white;
-}
-
-.svc-btn.stop {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--danger);
-}
-
-.svc-btn.stop:hover:not(:disabled) {
-  background: var(--danger);
-  color: white;
-}
-
-.svc-btn.restart {
-  background: rgba(245, 158, 11, 0.1);
-  color: var(--warning);
-}
-
-.svc-btn.restart:hover:not(:disabled) {
-  background: var(--warning);
-  color: white;
-}
-
-.svc-btn:disabled { opacity: 0.4; cursor: not-allowed; }
-
-/* System Controls */
-.system-controls {
+/* ===== Stat Grid ===== */
+.stat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-bottom: 28px;
 }
-
-.system-card {
-  background: var(--surface-2);
-  border-radius: 10px;
-  padding: 16px;
-}
-
-.system-card h4 {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--text);
-  margin: 0 0 12px 0;
-}
-
-.system-stats {
+.stat-card {
+  position: relative;
+  overflow: hidden;
   display: flex;
-  gap: 20px;
-  margin-bottom: 16px;
-  padding: 12px;
-  background: var(--surface);
-  border-radius: 8px;
+  align-items: center;
+  gap: 16px;
+  min-height: 126px;
+  padding: 20px 22px;
+  border-radius: 22px;
+  background:
+    linear-gradient(160deg, rgba(255,255,255,0.98), rgba(248,250,252,0.92));
+  border: 1px solid rgba(15,23,42,0.06);
+  box-shadow: 0 16px 36px rgba(15,23,42,0.06);
+  transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
 }
-
-.sys-stat {
+.stat-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  background: linear-gradient(90deg, rgba(6,182,212,0.82), rgba(99,102,241,0.8));
+}
+.dark .stat-card {
+  background:
+    linear-gradient(160deg, rgba(15,23,42,0.98), rgba(30,41,59,0.92));
+  border-color: rgba(255,255,255,0.06);
+  box-shadow: 0 18px 40px rgba(2,6,23,0.28);
+}
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 44px rgba(15,23,42,0.12);
+  border-color: rgba(6,182,212,0.24);
+}
+.stat-icon-bg {
+  width: 58px;
+  height: 58px;
+  border-radius: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.5);
+}
+.stat-card.cyan::before { background: linear-gradient(90deg, #06b6d4, #22d3ee); }
+.stat-card.blue::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.stat-card.purple::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+.stat-card.green::before { background: linear-gradient(90deg, #10b981, #34d399); }
+.stat-card.orange::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.stat-card.pink::before { background: linear-gradient(90deg, #ec4899, #f472b6); }
+.stat-card.cyan .stat-icon-bg { background: linear-gradient(145deg, rgba(6,182,212,0.16), rgba(207,250,254,0.96)); }
+.stat-card.blue .stat-icon-bg { background: linear-gradient(145deg, rgba(59,130,246,0.16), rgba(219,234,254,0.96)); }
+.stat-card.purple .stat-icon-bg { background: linear-gradient(145deg, rgba(139,92,246,0.16), rgba(237,233,254,0.96)); }
+.stat-card.green .stat-icon-bg { background: linear-gradient(145deg, rgba(16,185,129,0.16), rgba(209,250,229,0.96)); }
+.stat-card.orange .stat-icon-bg { background: linear-gradient(145deg, rgba(245,158,11,0.16), rgba(254,243,199,0.96)); }
+.stat-card.pink .stat-icon-bg { background: linear-gradient(145deg, rgba(236,72,153,0.16), rgba(252,231,243,0.96)); }
+.dark .stat-card.cyan .stat-icon-bg { background: linear-gradient(145deg, rgba(6,182,212,0.18), rgba(8,47,73,0.92)); }
+.dark .stat-card.blue .stat-icon-bg { background: linear-gradient(145deg, rgba(59,130,246,0.18), rgba(30,41,59,0.96)); }
+.dark .stat-card.purple .stat-icon-bg { background: linear-gradient(145deg, rgba(139,92,246,0.18), rgba(49,46,129,0.88)); }
+.dark .stat-card.green .stat-icon-bg { background: linear-gradient(145deg, rgba(16,185,129,0.18), rgba(6,78,59,0.9)); }
+.dark .stat-card.orange .stat-icon-bg { background: linear-gradient(145deg, rgba(245,158,11,0.18), rgba(120,53,15,0.9)); }
+.dark .stat-card.pink .stat-icon-bg { background: linear-gradient(145deg, rgba(236,72,153,0.18), rgba(80,7,36,0.88)); }
+.stat-body {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+  min-width: 0;
 }
-
-.sys-label {
-  font-size: 11px;
-  color: var(--text-3);
+.stat-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #94a3b8;
   text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+.stat-value {
+  font-size: clamp(1.4rem, 2vw, 2rem);
+  font-weight: 900;
+  line-height: 1.05;
+}
+.stat-meta {
+  font-size: 0.84rem;
+  color: #64748b;
+}
+.dark .stat-meta {
+  color: #94a3b8;
 }
 
-.sys-value {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text);
+/* ===== Panel ===== */
+.panel {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(160deg, rgba(255,255,255,0.98), rgba(248,250,252,0.92));
+  border: 1px solid rgba(15,23,42,0.06);
+  border-radius: 24px;
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 16px 36px rgba(15,23,42,0.06);
+  transition: background 0.3s, border-color 0.3s, box-shadow 0.3s;
 }
-
-.system-buttons {
+.panel::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 1px;
+  background: linear-gradient(90deg, rgba(6,182,212,0.45), transparent 82%);
+}
+.dark .panel {
+  background: linear-gradient(160deg, rgba(15,23,42,0.98), rgba(30,41,59,0.92));
+  border-color: rgba(255,255,255,0.06);
+  box-shadow: 0 18px 40px rgba(2,6,23,0.26);
+}
+.panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.panel-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  margin: 0;
+}
+.panel > .panel-title {
+  margin-bottom: 16px;
+}
+.panel-desc {
+  color: #94a3b8;
+  margin: 6px 0 0;
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+.panel > .panel-desc {
+  margin: 0 0 20px;
+}
+.panel-actions {
   display: flex;
   gap: 12px;
+  margin-top: 20px;
+  flex-wrap: wrap;
 }
-
-.system-btn {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 12px;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.system-btn.reboot {
-  background: rgba(245, 158, 11, 0.1);
-  color: var(--warning);
-}
-
-.system-btn.reboot:hover {
-  background: var(--warning);
-  color: white;
-}
-
-.system-btn.shutdown {
-  background: rgba(239, 68, 68, 0.1);
-  color: var(--danger);
-}
-
-.system-btn.shutdown:hover {
-  background: var(--danger);
-  color: white;
-}
-
-/* Modal */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.confirm-modal {
-  background: var(--surface);
-  border-radius: 12px;
-  padding: 24px;
-  max-width: 400px;
-  width: 90%;
-}
-
-.confirm-modal h3 {
-  font-family: 'Sora', sans-serif;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: var(--text);
-  margin: 0 0 12px 0;
-}
-
-.confirm-modal p {
-  color: var(--text-2);
-  margin: 0 0 20px 0;
+.panel-note {
+  font-size: 0.88rem;
+  color: #64748b;
   line-height: 1.5;
 }
-
-.modal-buttons {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
+.dark .panel-note {
+  color: #94a3b8;
 }
 
-.modal-btn {
-  padding: 10px 20px;
+/* ===== Buttons ===== */
+.btn-primary {
+  padding: 12px 24px;
   border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #06b6d4, #6366f1);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(6,182,212,0.25); }
+.btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-lg { padding: 14px 32px; font-size: 1rem; }
+.btn-outline {
+  padding: 12px 24px;
+  border: 2px solid rgba(0,0,0,0.1);
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.dark .btn-outline { border-color: rgba(255,255,255,0.1); }
+.btn-outline:hover { border-color: #ef4444; color: #ef4444; }
+
+/* ===== Quick Actions ===== */
+.action-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+.quick-action {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  min-height: 92px;
+  border: 1px solid rgba(15,23,42,0.06);
+  border-radius: 18px;
+  background: linear-gradient(160deg, rgba(255,255,255,0.92), rgba(240,249,255,0.86));
+  color: inherit;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.94rem;
+  text-align: left;
+  transition: all 0.25s ease;
+  box-shadow: 0 10px 22px rgba(15,23,42,0.05);
+}
+.dark .quick-action {
+  border-color: rgba(255,255,255,0.06);
+  background: linear-gradient(160deg, rgba(15,23,42,0.86), rgba(17,24,39,0.9));
+}
+.quick-action:hover {
+  background: linear-gradient(160deg, rgba(236,254,255,0.96), rgba(224,242,254,0.92));
+  border-color: rgba(6,182,212,0.32);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 30px rgba(6,182,212,0.12);
+}
+.dark .quick-action:hover {
+  background: linear-gradient(160deg, rgba(8,47,73,0.52), rgba(15,23,42,0.94));
+}
+.quick-action > span {
+  font-size: 1.25rem;
+}
+
+/* ===== Log ===== */
+.log-list {
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.log-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid rgba(15,23,42,0.06);
+  border-radius: 16px;
+  background: rgba(248,250,252,0.78);
+}
+.dark .log-item {
+  border-color: rgba(255,255,255,0.06);
+  background: rgba(15,23,42,0.6);
+}
+.log-icon {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: rgba(6,182,212,0.1);
+  font-size: 1.1rem;
+}
+.dark .log-icon {
+  background: rgba(34,211,238,0.14);
+}
+.log-body {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.log-msg {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+.log-time {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+/* ===== Export Controls ===== */
+.export-controls { display: flex; flex-direction: column; gap: 16px; }
+.input-row { display: flex; gap: 16px; flex-wrap: wrap; }
+.input-group {
+  display: flex; flex-direction: column; gap: 6px; flex: 1; min-width: 120px;
+}
+.input-group label { font-size: 0.82rem; font-weight: 700; color: #64748b; }
+.dark .input-group label { color: #94a3b8; }
+.input-group input, .setting-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 14px;
+  border: 2px solid rgba(0,0,0,0.08);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  background: transparent;
+  color: inherit;
+  transition: border-color 0.2s;
+}
+.dark .input-group input, .dark .setting-input { border-color: rgba(255,255,255,0.1); }
+.input-group input:focus, .setting-input:focus { outline: none; border-color: #06b6d4; }
+
+.quick-range-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.quick-range-btns button {
+  padding: 8px 16px;
+  border: 2px solid rgba(6,182,212,0.3);
+  border-radius: 10px;
+  background: transparent;
+  color: #06b6d4;
+  font-weight: 700;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.2s;
 }
+.quick-range-btns button:hover { background: #06b6d4; color: #fff; }
+.export-info { font-size: 0.9rem; color: #64748b; }
+.dark .export-info { color: #94a3b8; }
 
-.modal-btn.cancel {
-  background: var(--surface-2);
-  color: var(--text-2);
+/* ===== Data Table ===== */
+.table-wrap { overflow-x: auto; border-radius: 12px; }
+.data-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+.data-table th {
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  color: #fff;
+  text-align: left;
+  font-weight: 700;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.data-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+}
+.dark .data-table td { border-bottom-color: rgba(255,255,255,0.05); }
+.data-table tbody tr:hover { background: rgba(6,182,212,0.04); }
+.empty-row { text-align: center; color: #94a3b8; padding: 24px !important; }
+
+/* ===== Devices ===== */
+.device-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(280px, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+.device-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+  padding: 20px;
+  min-height: 228px;
+  border-radius: 18px;
+  border: 1px solid rgba(15,23,42,0.06);
+  background: linear-gradient(160deg, rgba(255,255,255,0.98), rgba(248,250,252,0.92));
+  box-shadow: 0 14px 30px rgba(15,23,42,0.05);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.device-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  border-radius: 18px 18px 0 0;
+  background: linear-gradient(90deg, rgba(6,182,212,0.82), rgba(99,102,241,0.78));
+}
+.device-card.online::before {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+.device-card.warning::before {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+.device-card.offline::before {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+}
+.dark .device-card {
+  border-color: rgba(255,255,255,0.06);
+  background: linear-gradient(160deg, rgba(15,23,42,0.96), rgba(30,41,59,0.9));
+  box-shadow: 0 18px 38px rgba(2,6,23,0.28);
+}
+.device-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 34px rgba(15,23,42,0.1);
+  border-color: rgba(6,182,212,0.2);
+}
+.device-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+.device-icon {
+  width: 58px;
+  height: 58px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  border-radius: 18px;
+  background: linear-gradient(145deg, rgba(6,182,212,0.16), rgba(224,242,254,0.95));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
+}
+.dark .device-icon {
+  background: linear-gradient(145deg, rgba(34,211,238,0.14), rgba(8,47,73,0.92));
+}
+.device-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 72px;
+}
+.device-info strong {
+  display: block;
+  width: 100%;
+  font-size: 1rem;
+  line-height: 1.22;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+  word-break: normal;
+  overflow-wrap: normal;
+}
+.device-id {
+  display: block;
+  width: 100%;
+  font-size: 0.76rem;
+  color: #64748b;
+  font-family: monospace;
+  line-height: 1.35;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.device-type {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  font-size: 0.88rem;
+  color: #94a3b8;
+  line-height: 1.5;
+  min-height: calc(1.5em * 2);
+}
+.device-status-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border-radius: 999px;
+  white-space: nowrap;
+  border: 1px solid rgba(15,23,42,0.06);
+  background: rgba(248,250,252,0.86);
+  flex-shrink: 0;
+}
+.dark .device-status-wrap {
+  border-color: rgba(255,255,255,0.08);
+  background: rgba(15,23,42,0.68);
+}
+.device-status-wrap.online {
+  color: #047857;
+  background: rgba(16,185,129,0.1);
+}
+.device-status-wrap.warning {
+  color: #b45309;
+  background: rgba(245,158,11,0.12);
+}
+.device-status-wrap.offline {
+  color: #b91c1c;
+  background: rgba(239,68,68,0.1);
+}
+.dark .device-status-wrap.online {
+  color: #6ee7b7;
+}
+.dark .device-status-wrap.warning {
+  color: #fcd34d;
+}
+.dark .device-status-wrap.offline {
+  color: #fca5a5;
+}
+.device-status-dot { width: 8px; height: 8px; border-radius: 50%; }
+.device-status-dot.online { background: #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.4); }
+.device-status-dot.warning { background: #f59e0b; box-shadow: 0 0 8px rgba(245,158,11,0.4); }
+.device-status-dot.offline { background: #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.4); }
+.device-status-text { font-size: 0.82rem; font-weight: 700; }
+.device-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(15,23,42,0.06);
+  margin-top: auto;
+}
+.dark .device-meta {
+  border-top-color: rgba(255,255,255,0.06);
+}
+.device-last-label {
+  font-size: 0.74rem;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  line-height: 1.35;
+}
+.device-last {
+  font-size: 0.8rem;
+  color: #64748b;
+  white-space: nowrap;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.dark .device-last {
+  color: #cbd5e1;
 }
 
-.modal-btn.cancel:hover {
-  background: var(--border);
+/* ===== Alerts ===== */
+.alert-panel {
+  overflow: hidden;
+}
+.alert-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,0.08);
+  background: rgba(248,250,252,0.86);
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+.alert-summary.ok {
+  color: #0f766e;
+  background: linear-gradient(135deg, rgba(209,250,229,0.92), rgba(204,251,241,0.92));
+  border-color: rgba(45,212,191,0.24);
+  box-shadow: 0 10px 20px rgba(20,184,166,0.1);
+}
+.alert-summary.danger {
+  color: #be123c;
+  background: linear-gradient(135deg, rgba(255,228,230,0.94), rgba(255,241,242,0.92));
+  border-color: rgba(251,113,133,0.22);
+  box-shadow: 0 10px 20px rgba(244,63,94,0.08);
+}
+.dark .alert-summary {
+  border-color: rgba(255,255,255,0.08);
+  background: rgba(15,23,42,0.72);
+  color: #e2e8f0;
+}
+.dark .alert-summary.ok {
+  color: #5eead4;
+}
+.dark .alert-summary.danger {
+  color: #fda4af;
+}
+.alert-summary-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 5px rgba(255,255,255,0.24);
+}
+.dark .alert-summary-dot {
+  box-shadow: 0 0 0 5px rgba(15,23,42,0.45);
+}
+.alert-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+.alert-card {
+  position: relative;
+  grid-column: span 4;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 20px;
+  min-height: 236px;
+  border-radius: 20px;
+  border: 1px solid rgba(0,0,0,0.06);
+  background: linear-gradient(160deg, rgba(255,255,255,0.98), rgba(248,250,252,0.94));
+  box-shadow: 0 14px 28px rgba(15,23,42,0.05);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.alert-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  border-radius: 20px 20px 0 0;
+  background: linear-gradient(90deg, rgba(6,182,212,0.8), rgba(99,102,241,0.72));
+}
+.alert-card.alert-danger::before {
+  background: linear-gradient(90deg, #f43f5e, #fb7185);
+}
+.alert-card.alert-ok::before {
+  background: linear-gradient(90deg, #14b8a6, #2dd4bf);
+}
+.alert-card.alert-ok {
+  border-color: rgba(45,212,191,0.22);
+  background:
+    radial-gradient(circle at top right, rgba(153,246,228,0.32), transparent 42%),
+    linear-gradient(160deg, rgba(245,255,252,0.98), rgba(236,253,245,0.92));
+  box-shadow: 0 16px 32px rgba(20,184,166,0.09);
+}
+.alert-card.alert-danger {
+  border-color: rgba(251,113,133,0.2);
+  background:
+    radial-gradient(circle at top right, rgba(254,205,211,0.34), transparent 42%),
+    linear-gradient(160deg, rgba(255,251,252,0.98), rgba(255,241,242,0.92));
+  box-shadow: 0 16px 32px rgba(244,63,94,0.08);
+}
+.alert-card:nth-last-child(2),
+.alert-card:last-child {
+  grid-column: span 6;
+}
+.dark .alert-card {
+  border-color: rgba(255,255,255,0.06);
+  background: linear-gradient(160deg, rgba(15,23,42,0.96), rgba(30,41,59,0.9));
+  box-shadow: 0 18px 34px rgba(2,6,23,0.28);
+}
+.dark .alert-card.alert-ok {
+  border-color: rgba(45,212,191,0.18);
+  background:
+    radial-gradient(circle at top right, rgba(20,184,166,0.18), transparent 42%),
+    linear-gradient(160deg, rgba(15,23,42,0.96), rgba(12,74,64,0.62));
+}
+.dark .alert-card.alert-danger {
+  border-color: rgba(251,113,133,0.16);
+  background:
+    radial-gradient(circle at top right, rgba(244,63,94,0.16), transparent 42%),
+    linear-gradient(160deg, rgba(15,23,42,0.96), rgba(76,5,25,0.5));
+}
+.alert-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 34px rgba(15,23,42,0.1);
+  border-color: rgba(6,182,212,0.2);
+}
+.alert-card.alert-ok:hover {
+  box-shadow: 0 20px 38px rgba(20,184,166,0.16);
+  border-color: rgba(45,212,191,0.32);
+}
+.alert-card.alert-danger:hover {
+  box-shadow: 0 20px 38px rgba(244,63,94,0.14);
+  border-color: rgba(251,113,133,0.28);
+}
+.alert-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.alert-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 0;
+  min-width: 0;
+  flex: 1;
+}
+.alert-icon-wrap {
+  width: 54px;
+  height: 54px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(6,182,212,0.16), rgba(224,242,254,0.95));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
+}
+.dark .alert-icon-wrap {
+  background: linear-gradient(145deg, rgba(34,211,238,0.14), rgba(8,47,73,0.92));
+}
+.alert-card.alert-ok .alert-icon-wrap {
+  background: linear-gradient(145deg, rgba(153,246,228,0.62), rgba(236,253,245,0.98));
+}
+.alert-card.alert-danger .alert-icon-wrap {
+  background: linear-gradient(145deg, rgba(255,228,230,0.96), rgba(255,241,242,0.98));
+}
+.dark .alert-card.alert-ok .alert-icon-wrap {
+  background: linear-gradient(145deg, rgba(45,212,191,0.18), rgba(15,118,110,0.42));
+}
+.dark .alert-card.alert-danger .alert-icon-wrap {
+  background: linear-gradient(145deg, rgba(251,113,133,0.18), rgba(136,19,55,0.38));
+}
+.alert-icon {
+  font-size: 1.6rem;
+}
+.alert-header-copy {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.alert-header-copy strong {
+  font-size: 1rem;
+  line-height: 1.28;
+}
+.alert-card.alert-ok .alert-header-copy strong {
+  color: #0f766e;
+}
+.alert-card.alert-danger .alert-header-copy strong {
+  color: #e11d48;
+}
+.dark .alert-card.alert-ok .alert-header-copy strong {
+  color: #5eead4;
+}
+.dark .alert-card.alert-danger .alert-header-copy strong {
+  color: #fda4af;
+}
+.alert-current {
+  font-size: 0.85rem;
+  color: #64748b;
+}
+.dark .alert-current {
+  color: #94a3b8;
+}
+.alert-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  white-space: nowrap;
+  border: 1px solid rgba(15,23,42,0.06);
+  background: rgba(248,250,252,0.86);
+}
+.dark .alert-badge {
+  border-color: rgba(255,255,255,0.08);
+  background: rgba(15,23,42,0.68);
+}
+.alert-badge.alert-ok {
+  color: #0f766e;
+  background: linear-gradient(135deg, rgba(209,250,229,0.92), rgba(204,251,241,0.92));
+  border-color: rgba(45,212,191,0.2);
+}
+.alert-badge.alert-danger {
+  color: #be123c;
+  background: linear-gradient(135deg, rgba(255,228,230,0.94), rgba(255,241,242,0.92));
+  border-color: rgba(251,113,133,0.2);
+}
+.dark .alert-badge.alert-ok {
+  color: #5eead4;
+}
+.dark .alert-badge.alert-danger {
+  color: #fda4af;
+}
+.alert-inputs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.alert-inputs .input-group { flex: 1; }
+.alert-status {
+  margin-top: auto;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-align: center;
+  border: 1px solid transparent;
+}
+.alert-ok {
+  background: linear-gradient(135deg, rgba(209,250,229,0.92), rgba(204,251,241,0.92));
+  color: #0f766e;
+  border-color: rgba(45,212,191,0.18);
+}
+.dark .alert-ok {
+  color: #5eead4;
+  background: linear-gradient(135deg, rgba(20,83,45,0.32), rgba(17,94,89,0.3));
+  border-color: rgba(45,212,191,0.14);
+}
+.alert-danger {
+  background: linear-gradient(135deg, rgba(255,228,230,0.96), rgba(255,241,242,0.94));
+  color: #e11d48;
+  border-color: rgba(251,113,133,0.16);
+}
+.dark .alert-danger {
+  color: #fda4af;
+  background: linear-gradient(135deg, rgba(127,29,29,0.3), rgba(136,19,55,0.28));
+  border-color: rgba(251,113,133,0.14);
+}
+.alert-actions {
+  align-items: center;
+  justify-content: space-between;
 }
 
-.modal-btn.confirm {
-  background: var(--accent);
-  color: white;
+/* ===== Settings ===== */
+.settings-list { display: flex; flex-direction: column; gap: 4px; }
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  flex-wrap: wrap;
+}
+.dark .setting-row { border-bottom-color: rgba(255,255,255,0.05); }
+.setting-info { flex: 1; min-width: 200px; }
+.setting-info strong { display: block; font-size: 0.92rem; }
+.setting-info span { font-size: 0.82rem; color: #94a3b8; }
+.setting-input { width: 150px; text-align: right; }
+.setting-input.wide { width: 300px; text-align: left; font-family: monospace; font-size: 0.82rem; }
+
+/* Toggle Switch */
+.toggle-switch { position: relative; display: inline-block; width: 50px; height: 28px; cursor: pointer; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.15);
+  border-radius: 28px;
+  transition: 0.3s;
+}
+.dark .toggle-slider { background: rgba(255,255,255,0.12); }
+.toggle-slider::before {
+  content: '';
+  position: absolute;
+  height: 22px; width: 22px;
+  left: 3px; bottom: 3px;
+  background: white;
+  border-radius: 50%;
+  transition: 0.3s;
+}
+.toggle-switch input:checked + .toggle-slider { background: #06b6d4; }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(22px); }
+
+/* ===== Info Grid ===== */
+.system-info-panel {
+  overflow: hidden;
+}
+.system-stack-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(6,182,212,0.16);
+  background: linear-gradient(135deg, rgba(236,254,255,0.96), rgba(224,242,254,0.92));
+  color: #0f766e;
+  font-size: 0.88rem;
+  font-weight: 700;
+  box-shadow: 0 10px 20px rgba(14,165,233,0.08);
+}
+.dark .system-stack-pill {
+  border-color: rgba(34,211,238,0.14);
+  background: linear-gradient(135deg, rgba(8,47,73,0.64), rgba(15,23,42,0.82));
+  color: #67e8f9;
+}
+.system-stack-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+  box-shadow: 0 0 0 5px rgba(255,255,255,0.24);
+}
+.dark .system-stack-dot {
+  box-shadow: 0 0 0 5px rgba(15,23,42,0.45);
+}
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.info-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  min-height: 160px;
+  border-radius: 20px;
+  border: 1px solid rgba(15,23,42,0.06);
+  background: linear-gradient(160deg, rgba(255,255,255,0.98), rgba(248,250,252,0.92));
+  box-shadow: 0 14px 28px rgba(15,23,42,0.05);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+}
+.info-item::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 4px;
+  border-radius: 20px 20px 0 0;
+  background: linear-gradient(90deg, rgba(6,182,212,0.8), rgba(99,102,241,0.72));
+}
+.info-item:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 34px rgba(15,23,42,0.09);
+}
+.dark .info-item {
+  border-color: rgba(255,255,255,0.06);
+  background: linear-gradient(160deg, rgba(15,23,42,0.96), rgba(30,41,59,0.9));
+  box-shadow: 0 18px 34px rgba(2,6,23,0.28);
+}
+.info-item-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.info-icon {
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.3rem;
+  border-radius: 15px;
+  background: linear-gradient(145deg, rgba(6,182,212,0.16), rgba(224,242,254,0.95));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
+}
+.dark .info-icon {
+  background: linear-gradient(145deg, rgba(34,211,238,0.14), rgba(8,47,73,0.92));
+}
+.info-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+.dark .info-label {
+  color: #94a3b8;
+}
+.info-item strong {
+  font-size: 1.06rem;
+  line-height: 1.35;
+  font-weight: 800;
+  color: #1e293b;
+}
+.dark .info-item strong {
+  color: #f8fafc;
+}
+.info-note {
+  margin-top: auto;
+  font-size: 0.85rem;
+  line-height: 1.55;
+  color: #64748b;
+}
+.dark .info-note {
+  color: #94a3b8;
+}
+.info-item.cyan::before { background: linear-gradient(90deg, #06b6d4, #38bdf8); }
+.info-item.blue::before { background: linear-gradient(90deg, #3b82f6, #60a5fa); }
+.info-item.violet::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+.info-item.amber::before { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+.info-item.slate::before { background: linear-gradient(90deg, #64748b, #94a3b8); }
+.info-item.rose::before { background: linear-gradient(90deg, #f43f5e, #fb7185); }
+.info-item.emerald::before { background: linear-gradient(90deg, #10b981, #34d399); }
+.info-item.cyan .info-icon {
+  background: linear-gradient(145deg, rgba(207,250,254,0.92), rgba(224,242,254,0.98));
+}
+.info-item.blue .info-icon {
+  background: linear-gradient(145deg, rgba(219,234,254,0.94), rgba(239,246,255,0.98));
+}
+.info-item.violet .info-icon {
+  background: linear-gradient(145deg, rgba(237,233,254,0.94), rgba(245,243,255,0.98));
+}
+.info-item.amber .info-icon {
+  background: linear-gradient(145deg, rgba(254,243,199,0.94), rgba(255,251,235,0.98));
+}
+.info-item.slate .info-icon {
+  background: linear-gradient(145deg, rgba(226,232,240,0.94), rgba(248,250,252,0.98));
+}
+.info-item.rose .info-icon {
+  background: linear-gradient(145deg, rgba(255,228,230,0.94), rgba(255,241,242,0.98));
+}
+.info-item.emerald .info-icon {
+  background: linear-gradient(145deg, rgba(209,250,229,0.94), rgba(236,253,245,0.98));
+}
+.dark .info-item.cyan .info-icon {
+  background: linear-gradient(145deg, rgba(8,145,178,0.22), rgba(12,74,110,0.42));
+}
+.dark .info-item.blue .info-icon {
+  background: linear-gradient(145deg, rgba(59,130,246,0.2), rgba(30,64,175,0.38));
+}
+.dark .info-item.violet .info-icon {
+  background: linear-gradient(145deg, rgba(139,92,246,0.2), rgba(91,33,182,0.38));
+}
+.dark .info-item.amber .info-icon {
+  background: linear-gradient(145deg, rgba(245,158,11,0.2), rgba(146,64,14,0.38));
+}
+.dark .info-item.slate .info-icon {
+  background: linear-gradient(145deg, rgba(100,116,139,0.22), rgba(51,65,85,0.44));
+}
+.dark .info-item.rose .info-icon {
+  background: linear-gradient(145deg, rgba(244,63,94,0.2), rgba(136,19,55,0.38));
+}
+.dark .info-item.emerald .info-icon {
+  background: linear-gradient(145deg, rgba(16,185,129,0.2), rgba(6,95,70,0.38));
 }
 
-.modal-btn.confirm:hover {
-  background: var(--accent-dark);
+/* ===== Responsive ===== */
+@media (max-width: 1440px) {
+  .device-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
-/* Dark Mode */
-.admin-dashboard.dark {
-  --bg: #0f172a;
-  --surface: #1e293b;
-  --surface-2: #334155;
-  --border: #475569;
-  --text: #f1f5f9;
-  --text-2: #94a3b8;
-  --text-3: #64748b;
+@media (max-width: 1180px) {
+  .info-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .alert-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .alert-card,
+  .alert-card:nth-last-child(2),
+  .alert-card:last-child {
+    grid-column: span 1;
+  }
+  .device-card {
+    min-height: 0;
+  }
+  .device-card-head {
+    align-items: flex-start;
+  }
+  .device-status-wrap {
+    align-self: flex-start;
+  }
+  .device-type {
+    min-height: 0;
+  }
+  .device-meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 900px) {
+  .admin { flex-direction: column; }
+  
+  /* Sidebar as Drawer */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: -280px;
+    width: 280px;
+    height: 100vh;
+    z-index: 200;
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    background: #fff;
+    box-shadow: 10px 0 30px rgba(0,0,0,0.1);
+    overflow-y: auto;
+    border-right: none;
+  }
+  .dark .sidebar { background: #111827; box-shadow: 10px 0 30px rgba(0,0,0,0.4); }
+  .sidebar.mobile-open { transform: translateX(280px); }
+
+  .sidebar-brand { 
+    margin: 14px 14px 10px;
+    padding: 16px;
+    justify-content: space-between;
+  }
+  .brand-logo-wrap { width: 48px; height: 48px; border-radius: 16px; }
+  .brand-logo { width: 28px; height: 28px; }
+  .brand-title { font-size: 1.14rem; }
+  .brand-role { width: 146px; font-size: 0.64rem; letter-spacing: 0.14em; padding: 7px 10px; }
+  
+  .menu-close-btn {
+    display: flex;
+  }
+
+  .nav { padding: 16px 12px 18px; gap: 10px; flex-direction: column; }
+  .nav-item { padding: 14px 16px; width: 100%; border-radius: 18px; }
+  .nav-label { display: block; }
+  .nav-icon { width: 42px; height: 42px; font-size: 1.25rem; }
+
+  .sidebar-footer { 
+    display: block; 
+    margin-top: auto; 
+    padding: 20px 14px 18px;
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+  .dark .sidebar-footer { border-top-color: rgba(255,255,255,0.08); }
+
+  .mobile-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 150;
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* Top Bar & Burger */
+  .topbar {
+    padding: 14px 20px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    background: #fff;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .dark .topbar { background: #111827; border-bottom-color: rgba(255,255,255,0.06); }
+  
+  .topbar-left { display: flex; align-items: center; gap: 16px; }
+  .topbar-info { display: flex; flex-direction: column; }
+  
+  .burger-btn {
+    display: flex; flex-direction: column; gap: 4px;
+    width: 42px; height: 42px;
+    padding: 10px;
+    border: 1px solid rgba(0,0,0,0.08); border-radius: 10px;
+    background: transparent; cursor: pointer;
+    transition: 0.2s;
+  }
+  .dark .burger-btn { border-color: rgba(255,255,255,0.08); }
+  .burger-btn span {
+    display: block; width: 100%; height: 2px;
+    background: var(--text-primary);
+    border-radius: 4px; transition: 0.3s;
+  }
+  .burger-btn:hover { background: rgba(6,182,212,0.08); border-color: #06b6d4; }
+  
+  .page-title { font-size: 1rem; text-align: left; }
+  .page-subtitle { font-size: 0.7rem; text-align: left; }
+  
+  .topbar-right { width: auto; justify-content: flex-end; }
+  .status-pill { padding: 6px 12px; font-size: 0.7rem; }
+  
+  .overview-head {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 22px;
+  }
+  .overview-badges {
+    justify-content: flex-start;
+  }
+
+  .section { padding: 20px 16px 40px; }
+  .device-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .overview-head {
+    padding: 20px 18px;
+  }
+  .overview-title {
+    font-size: 1.2rem;
+  }
+  .overview-badges {
+    width: 100%;
+  }
+  .stat-grid { grid-template-columns: 1fr; }
+  .stat-card {
+    min-height: 112px;
+    padding: 18px;
+  }
+  .panel { padding: 20px 16px; }
+  .log-body {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .input-row { flex-direction: column; }
+  .system-stack-pill {
+    width: 100%;
+    justify-content: center;
+  }
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+  .info-item {
+    min-height: 0;
+  }
+  .alert-grid {
+    grid-template-columns: 1fr;
+  }
+  .alert-card {
+    min-height: 0;
+  }
+  .alert-card-top {
+    flex-direction: column;
+  }
+  .alert-badge {
+    align-self: flex-start;
+  }
+  .alert-inputs {
+    grid-template-columns: 1fr;
+  }
+  .setting-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+  .setting-input { width: 100% !important; text-align: left; }
+  .panel-actions { flex-direction: column; }
+  .btn-primary, .btn-outline { width: 100%; justify-content: center; }
 }
 </style>
