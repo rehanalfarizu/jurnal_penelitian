@@ -141,27 +141,29 @@ if (sensorData.gateway) {     // RPi gateway health
 - **Patch Anti-leakage (sudah diterapkan):** Rolling means dihitung independen per train/test set, sehingga R² RF=0.9952 valid untuk deployment real-time
 - **Multi-source dataset:** CSV `device_id` = label aggregator (bukan single sensor). Payload asli mengandung blok ESP32 + Camera + Gateway (lihat section "Klarifikasi Single-Column DeviceID" di atas)
 
-## Pekerjaan Belum Selesai (Lanjutan dari Sesi Ini)
+## Progress Selanjutnya
 
-### Task 1: Jalankan streaming pipeline dengan model fitur 10-dimensi
-- **Notebook sudah diperbaiki:** `update_model()` sekarang pakai 10 fitur (bukan 4) via `_extract_features()`:
-  - 6 fitur: suhu, kelembaban, energy_score, jumlah_orang, tegangan, arus
-  - 4 fitur interaksi: suhu×kelembaban/100, suhu+daya/100, kelembaban×orang/10, tegangan×arus/1000
-- **Script siap dijalankan:** `/tmp/run_streaming_v2.py` (syntax checked ✓)
-- **Cara jalankan:** `python3 /tmp/run_streaming_v2.py`
-- **Output yang diharapkan:** 4 plot (streaming_metrics.png, anomaly_fusion.png, latency_ecdf.png + re-save)
-- **Perubahan dari versi sebelumnya:** R² seharusnya naik dari 0.5950 (4-fitur) ke ~0.80+ (10-fitur)
-- **Plot yang diperbaiki di notebook sel 11:** histogram duplicate `density=False` → fix, routing timeline yang bertumpuk → fix dengan `where=` condition, R² timeline lebih smooth dengan `rolling window`
+### Sesi — Validasi Feature Completeness & Cleanup
+**Status:** V6 chosen as baseline. File cleanup selesai (V1-V5, gen scripts, EXEC_v6 duplikat dihapus).
 
-### Task 2: Verifikasi & rapikan hasil visualisasi
-- **Image #3 (routing decision timeline + online prediction quality):** Diperbaiki dengan `fill_between` + `where=` condition terpisah, bukan tumpang tindih
-- **Image #4 (latency_ecdf):** Anotasi P50/P90/P99/P99.9 diperbaiki dengan `ax.text` + `annotate('', xy=, xytext=)` untuk arrow terpisah, menghindari overlap teks
-- **Semua plot:** Pastikan readable dan layak untuk paper
-
-### File notebook yang sudah dimodifikasi:
-- `edge_cloud_streaming.ipynb` — sel 5 (update_model + _extract_features), sel 11 (plot 2x2), sel 14 (ECDF annotations)
+- [x] Validasi streaming pipeline (`edge_cloud_streaming.ipynb`) menggunakan 15 fitur
+- [x] Git LFS setup — sensor_data.csv + best_energy_model.joblib di-LFS tracking
+- [x] Force-push ke GitHub berhasil
+- [x] **Cleanup:** gen_notebook_v*.py (semua versi), edge_cloud_streaming_EXEC_v*.ipynb (duplikat), PNG lama (v3-v5), fix_kernel.py, ridge_online_model.pkl → **dihapus**
+- [x] **Upgrade ke 18 fitur:** rolling means (`daya_ma_short`, `daya_ma_long`, `suhu_ma_short`) sudah ditambahkan ke streaming notebook
+- [x] **Analisa false positive anomaly detection** selesai — hasilnya:
+  - Total detected: 55,028 vs injected: 2,200
+  - **Hard anomalies** (physics impossible): 200/200 = **100%** ✓
+  - **Soft anomalies** (±15% drift): 169/2,000 = **8.5%** ❌
+  - **FP: 54,659** dari 1.97M normal → 99.96% FP memiliki zscore dekat threshold (1.9-2.1)
+  - **Diagnosis:** z-score threshold 2.0 terlalu sensitif + heavy tails di energy score distribution
+  - **Rekomendasi:** naikkkan threshold ke 2.5 (precision naik ke 4.3%) atau ganti sliding window temporal
+- [x] **Perbaikan visualisasi timeline** — ganti `fill_between` sequential dengan stacked bar per 10K bin
+  - Hasil: `axes[1,0]` menampilkan stacked bar edge-only vs cloud-routed per 10K records
+  - Reference line 10% cloud routing ditambahkan untuk context
 
 ## Preferensi Kolaborasi
+
 - **JANGAN** langsung menulis artikel/naskah jurnal — user hanya minta cek & validasi proyek
 - **SELALU** cek file sebelum memberikan saran (asumsi = salah, baca dulu)
 - **GUNAKAN** task tracking untuk pekerjaan multi-step

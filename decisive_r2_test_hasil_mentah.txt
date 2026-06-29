@@ -1,0 +1,108 @@
+================================================================================
+TES PENENTU — Static R²: Clean vs Hard vs All
+================================================================================
+
+[STEP 1] Loading CSV ...
+  Loaded 2,027,520 records
+  Hard anomaly indices: [1734950  631988  116433  909665 1591066]... (total 200)
+  Soft anomaly indices: [ 825594  808874 1765342  532241 1804351]... (total 2000)
+
+[STEP 2] Extracting features for full 2M records ...
+  ... 500,000/2,027,520
+  ... 1,000,000/2,027,520
+  ... 1,500,000/2,027,520
+  ... 2,000,000/2,027,520
+  Feature extraction done in 210.8s
+  X shape: (2027520, 18), y shape: (2027520,)
+
+[STEP 3] Fitting batch Ridge on full 2M records ...
+  Fitted in 2.0s
+
+================================================================================
+HASIL STATIC R² — THE DECISIVE TEST
+================================================================================
+
+Static R² (ALL records, including 2,200 anomalies): 0.079141
+Static R² (CLEAN only, 2,025,320 records):         0.348033
+Static R² (HARD anomaly only, 200 records):        -0.413508
+Static R² (SOFT anomaly only, 2,000 records):      0.333788
+
+--- SS_res Breakdown ---
+  Total SS_res:              137,843,194.44
+  SS_res clean (normal):     22,176,932.26 (16.09%)
+  SS_res hard (200 anom):    115,643,729.67 (83.90%)
+  SS_res soft (2000 anom):   22,532.50 (0.02%)
+  SS_res other (rest):       -0.00 (-0.00%)
+
+--- Per-Record Stats ---
+  All records:  mean_err=2.2027W, rmse=8.2454W
+  Clean only:   mean_err=2.1606W, rmse=3.3091W
+  Hard only:    mean_err=423.2584W, rmse=760.4069W
+  Soft only:    mean_err=2.6620W, rmse=3.3565W
+
+--- Mean/Std Breakdown ---
+  All daya:     mean=44.6185, std=8.5924
+  Clean daya:   mean=44.5780, std=4.0982
+  Hard daya:    mean=455.8601, std=639.5830
+  All pred:     mean=44.6185, std=2.4172
+  Clean pred:   mean=44.6190, std=2.4118
+  Hard pred:    mean=38.7119, std=15.4316
+
+--- Interpretasi ---
+  Proporsi SS_res dari 200 hard anomaly / total SS_res: 83.90%
+  >>> R² clean=0.3480 >>> MODEL MASIH BERMASALAH bahkan pada data normal.
+
+================================================================================
+BUG #1 ANALYSIS: r2_buf_train always 0.000000
+================================================================================
+
+Reproducing the buffer R² computation...
+  Reproduced buffer R²: 0.145265
+  ss_tot value: 11522048.094509
+  ss_res value: 9848299.536059
+
+  *** BUG #1 CONFIRMED ***
+  flush_retrain() calls del self._stream_buffer_X[:] BEFORE _capture_checkpoint()
+  When _capture_checkpoint accesses self._stream_buffer_X, it's ALREADY EMPTY
+  → ss_tot = 0 → returns 0.0 (from 'else 0.0')
+
+================================================================================
+BUG #2 ANALYSIS: r2_window_recent = 38-47 (R² > 1.0 is IMPOSSIBLE)
+================================================================================
+
+  *** BUG #2 CONFIRMED ***
+  self._r2_actual deque stores DAYA VALUES (scalar), NOT R² values!
+  estimate_r2() appends y_true to _r2_actual — that's the ACTUAL DAYA
+  Then _capture_checkpoint does: list(self._r2_actual)[-1000:]
+  This retrieves the LAST 500 DAYA VALUES (since maxlen=500)
+  Then np.mean(those_dayas) ≈ 45.0 — which looks like R² = 45.0
+  THIS IS NOT AN R² VALUE AT ALL! It's just the mean power level.
+
+================================================================================
+FIX VERIFICATION
+================================================================================
+  Corrected rolling R² (last 500 records, proper): -0.035139
+  (Mean daya incorrectly reported as R²: 39.8695 — explains '47.47' values!)
+
+================================================================================
+DETAIL: Per-hard-anomaly prediction quality
+================================================================================
+  Hard anomaly |error| stats:
+    Mean |error|: 423.26 W
+    Median |error|: 22.62 W
+    Max |error|: 1955.04 W
+    Min |error|: 0.64 W
+
+  Top-10 highest |error| hard anomaly records:
+    idx=1450013: actual=     45.66 W, pred=   37.62 W, error=    8.04 W
+    idx=1139420: actual=     43.95 W, pred=   27.41 W, error=   16.54 W
+    idx=552723: actual=   1362.05 W, pred=   45.62 W, error= 1316.43 W
+    idx=182300: actual=     42.82 W, pred=   71.49 W, error=  -28.67 W
+    idx=1824430: actual=     42.33 W, pred=   58.23 W, error=  -15.90 W
+    idx=1514209: actual=    862.58 W, pred=   45.03 W, error=  817.55 W
+    idx=702179: actual=     44.11 W, pred=   32.34 W, error=   11.77 W
+    idx=1827891: actual=   1453.75 W, pred=   44.96 W, error= 1408.79 W
+    idx=712984: actual=     42.97 W, pred=   21.11 W, error=   21.86 W
+    idx=1980098: actual=   1415.74 W, pred=   42.47 W, error= 1373.27 W
+
+[SAVE] Results saved to /tmp/test_r2_decisive.json

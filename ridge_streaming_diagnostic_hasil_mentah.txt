@@ -1,0 +1,591 @@
+================================================================================
+DIAGNOSTIC — Ridge Coefficient Tracking + Warm-Start Experiment
+ACTIVE NOTEBOOK: edge_cloud_streaming.ipynb (Ridge, retrain_every=5)
+================================================================================
+
+[STEP 1] Loading CSV ...
+  Loaded 2,027,520 records
+  [1a] Noise injected: std=0.1549W (5% of clean_day std)
+  [1b] Drift injected: 1% per 10K records
+  [1c] Hard anomalies injected: 200
+  [1d] Soft anomalies injected: 2000
+
+[STEP 1 SUMMARY]
+  Normal: 2,025,320
+  Hard:   200
+  Soft:   2000
+
+[STEP 1d] Sequential warmup on 50,000 records ...
+
+  [COEF] After training on 50,000 records (chunk # = retrain #1):
+    R² on buffered data: 0.000000
+    Recent R²_window(-1000): 0.000000
+    Total samples so far: 0
+    Intercept: 38.328247
+    Coefficients (18 features):
+      f_suhu              : 5.462890
+      f_kelembaban        : 7.933877
+      f_tegangan          : 1.784800
+      f_arus              : 43.289491
+      f_jumlah_orang      : 0.077850
+      f_tegangan_arus     : -43.192112
+      f_suhu_kelembaban   : -10.817087
+      f_hour              : 0.301901
+      f_dayofweek         : 0.341478
+      f_day               : 0.341478
+      f_morning           : 0.359587
+      f_midday            : 0.596544
+      f_afternoon         : 0.393972
+      f_evening           : -0.428445
+      f_night             : -0.674937
+      f_ma_short_p        : 1.129490
+      f_ma_long_p         : -0.104505
+      f_ma_short_t        : -3.055769
+    Top-5 by |coef|:
+      f_arus              : 43.289491
+      f_tegangan_arus     : -43.192112
+      f_suhu_kelembaban   : -10.817087
+      f_kelembaban        : 7.933877
+      f_suhu              : 5.462890
+  ✓ Warmup complete: model trained on 50,000 records
+  Warmup training R² = 0.173344
+
+[STEP 2] Streaming 2,027,520 records in chunks of 50,000
+  Retraining every 5 chunks -> checkpoints at chunks 5,10,15,...
+
+Chunk   2 | 50,000 rec | anom= 3221 (6.44%) | cloud= 3233
+Chunk   3 | 50,000 rec | anom= 3338 (6.68%) | cloud= 3338
+Chunk   4 | 50,000 rec | anom= 3228 (6.46%) | cloud= 3240
+Chunk   5 | 50,000 rec | anom= 3395 (6.79%) | cloud= 3395
+
+  [COEF] After training on 250,000 records (chunk # = retrain #2):
+    R² on buffered data: 0.000000
+    Recent R²_window(-1000): 47.474223
+    Total samples so far: 250,000
+    Intercept: 42.158157
+    Coefficients (18 features):
+      f_suhu              : 0.624171
+      f_kelembaban        : 1.313729
+      f_tegangan          : 0.460890
+      f_arus              : -0.910937
+      f_jumlah_orang      : -0.005319
+      f_tegangan_arus     : 1.004080
+      f_suhu_kelembaban   : -2.020530
+      f_hour              : 0.085893
+      f_dayofweek         : 0.173466
+      f_day               : -0.082574
+      f_morning           : -0.043196
+      f_midday            : 0.001667
+      f_afternoon         : -0.039549
+      f_evening           : -0.003035
+      f_night             : 0.066866
+      f_ma_short_p        : 1.553655
+      f_ma_long_p         : 1.096527
+      f_ma_short_t        : 0.196561
+    Top-5 by |coef|:
+      f_suhu_kelembaban   : -2.020530
+      f_ma_short_p        : 1.553655
+      f_kelembaban        : 1.313729
+      f_ma_long_p         : 1.096527
+      f_tegangan_arus     : 1.004080
+Chunk   6 | 50,000 rec | anom= 3101 (6.20%) | cloud= 3113
+Chunk   7 | 50,000 rec | anom= 3284 (6.57%) | cloud= 3284
+Chunk   8 | 50,000 rec | anom= 3138 (6.28%) | cloud= 3150
+Chunk   9 | 50,000 rec | anom= 3433 (6.87%) | cloud= 3433
+Chunk  10 | 50,000 rec | anom= 3255 (6.51%) | cloud= 3267
+
+  [COEF] After training on 250,000 records (chunk # = retrain #3):
+    R² on buffered data: 0.000000
+    Recent R²_window(-1000): 41.673517
+    Total samples so far: 500,000
+    Intercept: 45.385311
+    Coefficients (18 features):
+      f_suhu              : 0.124413
+      f_kelembaban        : 0.224563
+      f_tegangan          : 0.471894
+      f_arus              : 0.589193
+      f_jumlah_orang      : -0.014991
+      f_tegangan_arus     : -0.541085
+      f_suhu_kelembaban   : -0.503324
+      f_hour              : -0.063683
+      f_dayofweek         : 0.030401
+      f_day               : -0.047538
+      f_morning           : -0.045963
+      f_midday            : -0.042218
+      f_afternoon         : 0.023954
+      f_evening           : -0.012871
+      f_night             : 0.061663
+      f_ma_short_p        : 1.305645
+      f_ma_long_p         : 1.633803
+      f_ma_short_t        : 0.131414
+    Top-5 by |coef|:
+      f_ma_long_p         : 1.633803
+      f_ma_short_p        : 1.305645
+      f_arus              : 0.589193
+      f_tegangan_arus     : -0.541085
+      f_suhu_kelembaban   : -0.503324
+Chunk  11 | 50,000 rec | anom= 3316 (6.63%) | cloud= 3316
+Chunk  12 | 50,000 rec | anom= 3268 (6.54%) | cloud= 3280
+Chunk  13 | 50,000 rec | anom= 3159 (6.32%) | cloud= 3171
+Chunk  14 | 50,000 rec | anom= 3237 (6.47%) | cloud= 3237
+Chunk  15 | 50,000 rec | anom= 3267 (6.53%) | cloud= 3279
+
+  [COEF] After training on 250,000 records (chunk # = retrain #4):
+    R² on buffered data: 0.000000
+    Recent R²_window(-1000): 38.639944
+    Total samples so far: 750,000
+    Intercept: 42.544183
+    Coefficients (18 features):
+      f_suhu              : 0.493996
+      f_kelembaban        : 1.184870
+      f_tegangan          : 0.643210
+      f_arus              : 5.020428
+      f_jumlah_orang      : 0.021475
+      f_tegangan_arus     : -4.966910
+      f_suhu_kelembaban   : -1.829846
+      f_hour              : -0.025043
+      f_dayofweek         : -0.013838
+      f_day               : 0.106268
+      f_morning           : 0.037358
+      f_midday            : -0.069610
+      f_afternoon         : -0.000158
+      f_evening           : 0.002636
+      f_night             : 0.024190
+      f_ma_short_p        : 1.076693
+      f_ma_long_p         : 1.885904
+      f_ma_short_t        : 0.242757
+    Top-5 by |coef|:
+      f_arus              : 5.020428
+      f_tegangan_arus     : -4.966910
+      f_ma_long_p         : 1.885904
+      f_suhu_kelembaban   : -1.829846
+      f_kelembaban        : 1.184870
+Chunk  16 | 50,000 rec | anom= 3361 (6.72%) | cloud= 3361
+Chunk  17 | 50,000 rec | anom= 3260 (6.52%) | cloud= 3272
+Chunk  18 | 50,000 rec | anom= 3301 (6.60%) | cloud= 3301
+Chunk  19 | 50,000 rec | anom= 2997 (5.99%) | cloud= 3010
+Chunk  20 | 50,000 rec | anom= 3453 (6.91%) | cloud= 3453
+
+  [COEF] After training on 250,000 records (chunk # = retrain #5):
+    R² on buffered data: 0.000000
+    Recent R²_window(-1000): 46.412117
+    Total samples so far: 1,000,000
+    Intercept: 45.375594
+    Coefficients (18 features):
+      f_suhu              : 0.900434
+      f_kelembaban        : 1.777659
+      f_tegangan          : 0.571547
+      f_arus              : -0.916332
+      f_jumlah_orang      : -0.006334
+      f_tegangan_arus     : 1.005261
+      f_suhu_kelembaban   : -2.736689
+      f_hour              : 0.075414
+      f_dayofweek         : 0.098435
+      f_day               : -0.147493
+      f_morning           : 0.062005
+      f_midday            : -0.012706
+      f_afternoon         : -0.116479
+      f_evening           : 0.020340
+      f_night             : 0.037666
+      f_ma_short_p        : 0.738965
+      f_ma_long_p         : 1.704651
+      f_ma_short_t        : 0.112893
+    Top-5 by |coef|:
+      f_suhu_kelembaban   : -2.736689
+      f_kelembaban        : 1.777659
+      f_ma_long_p         : 1.704651
+      f_tegangan_arus     : 1.005261
+      f_arus              : -0.916332
+Chunk  21 | 50,000 rec | anom= 3227 (6.45%) | cloud= 3239
+Chunk  22 | 50,000 rec | anom= 3364 (6.73%) | cloud= 3364
+Chunk  23 | 50,000 rec | anom= 3328 (6.66%) | cloud= 3340
+Chunk  24 | 50,000 rec | anom= 3198 (6.40%) | cloud= 3210
+Chunk  25 | 50,000 rec | anom= 3141 (6.28%) | cloud= 3141
+
+  [COEF] After training on 250,000 records (chunk # = retrain #6):
+    R² on buffered data: 0.000000
+    Recent R²_window(-1000): 44.475880
+    Total samples so far: 1,250,000
+    Intercept: 43.921154
+    Coefficients (18 features):
+      f_suhu              : 0.566633
+      f_kelembaban        : 1.356469
+      f_tegangan          : 0.591307
+      f_arus              : -0.274447
+      f_jumlah_orang      : 0.014010
+      f_tegangan_arus     : 0.341790
+      f_suhu_kelembaban   : -2.039286
+      f_hour              : -0.033868
+      f_dayofweek         : -0.108184
+      f_day               : -0.099896
+      f_morning           : 0.006103
+      f_midday            : 0.106680
+      f_afternoon         : 0.003960
+      f_evening           : -0.099796
+      f_night             : -0.012901
+      f_ma_short_p        : 1.028958
+      f_ma_long_p         : 1.531680
+      f_ma_short_t        : 0.181740
+    Top-5 by |coef|:
+      f_suhu_kelembaban   : -2.039286
+      f_ma_long_p         : 1.531680
+      f_kelembaban        : 1.356469
+      f_ma_short_p        : 1.028958
+      f_tegangan          : 0.591307
+Chunk  26 | 50,000 rec | anom= 3240 (6.48%) | cloud= 3252
+Chunk  27 | 50,000 rec | anom= 3375 (6.75%) | cloud= 3375
+Chunk  28 | 50,000 rec | anom= 3216 (6.43%) | cloud= 3229
+Chunk  29 | 50,000 rec | anom= 3362 (6.72%) | cloud= 3362
+Chunk  30 | 50,000 rec | anom= 3036 (6.07%) | cloud= 3049
+
+  [COEF] After training on 250,000 records (chunk # = retrain #7):
+    R² on buffered data: 0.000000
+    Recent R²_window(-1000): 46.075011
+    Total samples so far: 1,500,000
+    Intercept: 46.543943
+    Coefficients (18 features):
+      f_suhu              : 0.411981
+      f_kelembaban        : 0.671967
+      f_tegangan          : 0.575734
+      f_arus              : 1.510188
+      f_jumlah_orang      : -0.000633
+      f_tegangan_arus     : -1.429081
+      f_suhu_kelembaban   : -1.164802
+      f_hour              : -0.034637
+      f_dayofweek         : -0.054804
+      f_day               : -0.098998
+      f_morning           : -0.060021
+      f_midday            : 0.025366
+      f_afternoon         : 0.099665
+      f_evening           : 0.000188
+      f_night             : -0.051309
+      f_ma_short_p        : 1.037132
+      f_ma_long_p         : 1.505206
+      f_ma_short_t        : 0.118247
+    Top-5 by |coef|:
+      f_arus              : 1.510188
+      f_ma_long_p         : 1.505206
+      f_tegangan_arus     : -1.429081
+      f_suhu_kelembaban   : -1.164802
+      f_ma_short_p        : 1.037132
+Chunk  31 | 50,000 rec | anom= 3256 (6.51%) | cloud= 3256
+Chunk  32 | 50,000 rec | anom= 3240 (6.48%) | cloud= 3252
+Chunk  33 | 50,000 rec | anom= 3407 (6.81%) | cloud= 3407
+Chunk  34 | 50,000 rec | anom= 3310 (6.62%) | cloud= 3322
+Chunk  35 | 50,000 rec | anom= 3369 (6.74%) | cloud= 3369
+
+  [COEF] After training on 250,000 records (chunk # = retrain #8):
+    R² on buffered data: 0.000000
+    Recent R²_window(-1000): 46.382290
+    Total samples so far: 1,750,000
+    Intercept: 48.047571
+    Coefficients (18 features):
+      f_suhu              : 0.467438
+      f_kelembaban        : 1.078510
+      f_tegangan          : 0.722085
+      f_arus              : 5.438905
+      f_jumlah_orang      : -0.000341
+      f_tegangan_arus     : -5.362996
+      f_suhu_kelembaban   : -1.625887
+      f_hour              : 0.013465
+      f_dayofweek         : -0.092441
+      f_day               : -0.313798
+      f_morning           : 0.051154
+      f_midday            : -0.003563
+      f_afternoon         : -0.001876
+      f_evening           : 0.040571
+      f_night             : -0.067997
+      f_ma_short_p        : 1.269324
+      f_ma_long_p         : 1.564882
+      f_ma_short_t        : 0.103485
+    Top-5 by |coef|:
+      f_arus              : 5.438905
+      f_tegangan_arus     : -5.362996
+      f_suhu_kelembaban   : -1.625887
+      f_ma_long_p         : 1.564882
+      f_ma_short_p        : 1.269324
+Chunk  36 | 50,000 rec | anom= 3210 (6.42%) | cloud= 3222
+Chunk  37 | 50,000 rec | anom= 3213 (6.43%) | cloud= 3227
+Chunk  38 | 50,000 rec | anom= 3305 (6.61%) | cloud= 3306
+Chunk  39 | 50,000 rec | anom= 3269 (6.54%) | cloud= 3281
+Chunk  40 | 50,000 rec | anom= 3393 (6.79%) | cloud= 3393
+
+  [COEF] After training on 227,520 records (chunk # = retrain #9):
+    R² on buffered data: 0.000000
+    Recent R²_window(-1000): 47.440183
+    Total samples so far: 1,977,520
+    Intercept: 44.191695
+    Coefficients (18 features):
+      f_suhu              : 0.582373
+      f_kelembaban        : 1.080280
+      f_tegangan          : 0.863885
+      f_arus              : 7.609680
+      f_jumlah_orang      : 0.029278
+      f_tegangan_arus     : -7.531242
+      f_suhu_kelembaban   : -1.769004
+      f_hour              : 0.155210
+      f_dayofweek         : 0.060444
+      f_day               : 0.046178
+      f_morning           : 0.018913
+      f_midday            : 0.011229
+      f_afternoon         : -0.024774
+      f_evening           : -0.013580
+      f_night             : 0.006477
+      f_ma_short_p        : 0.795132
+      f_ma_long_p         : 1.669306
+      f_ma_short_t        : 0.123566
+    Top-5 by |coef|:
+      f_arus              : 7.609680
+      f_tegangan_arus     : -7.531242
+      f_suhu_kelembaban   : -1.769004
+      f_ma_long_p         : 1.669306
+      f_kelembaban        : 1.080280
+Chunk  41 | 27,520 rec | anom= 1713 (6.22%) | cloud= 1714
+
+[STEP 2 SUMMARY]
+  Total retraining events: 9
+  Total samples processed: 1,977,520
+  Total anomalies detected: 129,184
+  Total cloud routed: 129,443
+
+[FINAL EVAL] Computing R² on last 10,000 records ...
+  R²: 0.743623
+  Correlation: 0.8648
+  MAE: 0.6756 W
+  RMSE: 1.1477 W
+  Mean actual: 45.2262, std actual: 2.2667
+  Mean pred: 45.2783, std pred: 2.1000
+  Min pred: 40.7032, Max pred: 49.4029
+  Min actual: 36.0375, Max actual: 117.4930
+
+================================================================================
+[WARM-START EXPERIMENT]
+================================================================================
+Hypothesis: Maybe Ridge at chunks 5/10/15 is stuck at LOCAL optimum.
+We will warm-start with coefficients from a SINGLE BATCH fit on the FULL
+2M-record dataset. If performance jumps immediately, the issue is
+  CONVERGENCE (streaming can't catch up to global optimum).
+If performance is unchanged, the issue is STRUCTURE (Ridge itself can't fit the data well in this noise/drift regime).
+
+[WARM-START 1] Training batch Ridge on full 2M records (this is the 'global optimum' reference)...
+  Extracting features for all 2,027,520 records (this takes ~1-2 min)...
+    ... processed 500,000/2,027,520
+    ... processed 1,000,000/2,027,520
+    ... processed 1,500,000/2,027,520
+    ... processed 2,000,000/2,027,520
+  Feature extraction done in 387.9s
+  Batch Ridge fit done in 2.2s
+
+  GLOBAL BATCH RIDGE (reference, non-streaming, no leakage):
+    R² (full 2M): 0.179636
+    RMSE: 7.7825 W
+    MAE:  0.7856 W
+    Correlation: 0.4238
+    Intercept: 44.618492
+    All 18 coefs (batch fit):
+      f_suhu              : 0.427888
+      f_kelembaban        : 0.850344
+      f_tegangan          : 0.471012
+      f_arus              : 1.032489
+      f_jumlah_orang      : 0.012461
+      f_tegangan_arus     : -0.965907
+      f_suhu_kelembaban   : -1.359269
+      f_hour              : 0.016526
+      f_dayofweek         : 0.003496
+      f_day               : -0.077591
+      f_morning           : 0.000204
+      f_midday            : 0.002304
+      f_afternoon         : -0.000598
+      f_evening           : -0.005711
+      f_night             : 0.002998
+      f_ma_short_p        : 1.400767
+      f_ma_long_p         : 2.030998
+      f_ma_short_t        : 0.158957
+    Top-5 by |coef|:
+      f_ma_long_p         : 2.030998
+      f_ma_short_p        : 1.400767
+      f_suhu_kelembaban   : -1.359269
+      f_arus              : 1.032489
+      f_tegangan_arus     : -0.965907
+
+[WARM-START 2] Loading batch Ridge coefficients into node ...
+  Setting node.model.coef_ = ridge_full.coef_
+  Setting node.scaler.mean_/scale_ = scaler_full.mean_/scale_
+  Setting node.model.intercept_ = ridge_full.intercept_
+
+  After warm-start:
+    node.model.coef_[5] (tegangan_arus): -0.965907 (batch=-0.965907)
+    node.scaler.mean_[0] (suhu): 30.1862
+    node.scaler.scale_[0] (suhu): 1.8821
+
+[WARM-START 3] Processing last 10K records with warm-started model (no retraining)...
+
+  WARM-STARTED MODEL on last 10K records:
+    R²: 0.683491
+    RMSE: 1.2752 W
+    MAE:  0.7091 W
+    Correlation: 0.8411
+    Mean actual: 45.2262, std actual: 2.2667
+    Mean pred: 45.1638, std pred: 2.2515
+    Min pred: 2.1029, Max pred: 50.2814
+    Min actual: 36.0375, Max actual: 117.4930
+
+  Rolling R² (window=500) on last 10K records (warm-started):
+    Mean: -10.894379
+    Median: 0.135129
+    Std: 221.340140
+    Min: -10728.084496
+    Max: 0.702215
+    % < 0: 25.11%
+
+================================================================================
+[COMPARISON]
+================================================================================
+  STREAMING RIDGE (chunked retrain, last 10K): R²=0.743623, MAE=0.6756W
+  WARM-START RIDGE (global batch coef, last 10K): R²=0.683491, MAE=0.7091W
+  GLOBAL BATCH RIDGE (full 2M, reference): R²=0.179636, MAE=0.7856W
+
+  Gap streaming→warm-start (Δ R²): 0.060133
+  >> Warm-start HELPS: streaming R² jumps by 0.0601
+  >> Diagnosis: CONVERGENCE ISSUE (Ridge online retrain doesn't reach global optimum)
+
+================================================================================
+[PER-CHUNK CHECKPOINT SUMMARY]
+================================================================================
+
+Checkpoint #1:
+  n_trained: 50,000
+  r2_buf_train: 0.000000
+  r2_window_recent: 0.000000
+  total_samples: 0
+  intercept: 38.328247
+  Key coefs (vs batch):
+    f_tegangan_arus: streaming=-43.192112, batch=-0.965907, ratio=44.7166
+    f_suhu:           streaming=5.462890, batch=0.427888
+    f_arus:           streaming=43.289491, batch=1.032489
+    f_ma_short_p:     streaming=1.129490, batch=1.400767
+    f_ma_long_p:      streaming=-0.104505, batch=2.030998
+    f_ma_short_t:     streaming=-3.055769, batch=0.158957
+  L2 distance from batch coef: 61.253824
+
+Checkpoint #2:
+  n_trained: 250,000
+  r2_buf_train: 0.000000
+  r2_window_recent: 47.474223
+  total_samples: 250,000
+  intercept: 42.158157
+  Key coefs (vs batch):
+    f_tegangan_arus: streaming=1.004080, batch=-0.965907, ratio=-1.0395
+    f_suhu:           streaming=0.624171, batch=0.427888
+    f_arus:           streaming=-0.910937, batch=1.032489
+    f_ma_short_p:     streaming=1.553655, batch=1.400767
+    f_ma_long_p:      streaming=1.096527, batch=2.030998
+    f_ma_short_t:     streaming=0.196561, batch=0.158957
+  L2 distance from batch coef: 3.047611
+
+Checkpoint #3:
+  n_trained: 250,000
+  r2_buf_train: 0.000000
+  r2_window_recent: 41.673517
+  total_samples: 500,000
+  intercept: 45.385311
+  Key coefs (vs batch):
+    f_tegangan_arus: streaming=-0.541085, batch=-0.965907, ratio=0.5602
+    f_suhu:           streaming=0.124413, batch=0.427888
+    f_arus:           streaming=0.589193, batch=1.032489
+    f_ma_short_p:     streaming=1.305645, batch=1.400767
+    f_ma_long_p:      streaming=1.633803, batch=2.030998
+    f_ma_short_t:     streaming=0.131414, batch=0.158957
+  L2 distance from batch coef: 1.333387
+
+Checkpoint #4:
+  n_trained: 250,000
+  r2_buf_train: 0.000000
+  r2_window_recent: 38.639944
+  total_samples: 750,000
+  intercept: 42.544183
+  Key coefs (vs batch):
+    f_tegangan_arus: streaming=-4.966910, batch=-0.965907, ratio=5.1422
+    f_suhu:           streaming=0.493996, batch=0.427888
+    f_arus:           streaming=5.020428, batch=1.032489
+    f_ma_short_p:     streaming=1.076693, batch=1.400767
+    f_ma_long_p:      streaming=1.885904, batch=2.030998
+    f_ma_short_t:     streaming=0.242757, batch=0.158957
+  L2 distance from batch coef: 5.696942
+
+Checkpoint #5:
+  n_trained: 250,000
+  r2_buf_train: 0.000000
+  r2_window_recent: 46.412117
+  total_samples: 1,000,000
+  intercept: 45.375594
+  Key coefs (vs batch):
+    f_tegangan_arus: streaming=1.005261, batch=-0.965907, ratio=-1.0407
+    f_suhu:           streaming=0.900434, batch=0.427888
+    f_arus:           streaming=-0.916332, batch=1.032489
+    f_ma_short_p:     streaming=0.738965, batch=1.400767
+    f_ma_long_p:      streaming=1.704651, batch=2.030998
+    f_ma_short_t:     streaming=0.112893, batch=0.158957
+  L2 distance from batch coef: 3.355249
+
+Checkpoint #6:
+  n_trained: 250,000
+  r2_buf_train: 0.000000
+  r2_window_recent: 44.475880
+  total_samples: 1,250,000
+  intercept: 43.921154
+  Key coefs (vs batch):
+    f_tegangan_arus: streaming=0.341790, batch=-0.965907, ratio=-0.3539
+    f_suhu:           streaming=0.566633, batch=0.427888
+    f_arus:           streaming=-0.274447, batch=1.032489
+    f_ma_short_p:     streaming=1.028958, batch=1.400767
+    f_ma_long_p:      streaming=1.531680, batch=2.030998
+    f_ma_short_t:     streaming=0.181740, batch=0.158957
+  L2 distance from batch coef: 2.143386
+
+Checkpoint #7:
+  n_trained: 250,000
+  r2_buf_train: 0.000000
+  r2_window_recent: 46.075011
+  total_samples: 1,500,000
+  intercept: 46.543943
+  Key coefs (vs batch):
+    f_tegangan_arus: streaming=-1.429081, batch=-0.965907, ratio=1.4795
+    f_suhu:           streaming=0.411981, batch=0.427888
+    f_arus:           streaming=1.510188, batch=1.032489
+    f_ma_short_p:     streaming=1.037132, batch=1.400767
+    f_ma_long_p:      streaming=1.505206, batch=2.030998
+    f_ma_short_t:     streaming=0.118247, batch=0.158957
+  L2 distance from batch coef: 0.978657
+
+Checkpoint #8:
+  n_trained: 250,000
+  r2_buf_train: 0.000000
+  r2_window_recent: 46.382290
+  total_samples: 1,750,000
+  intercept: 48.047571
+  Key coefs (vs batch):
+    f_tegangan_arus: streaming=-5.362996, batch=-0.965907, ratio=5.5523
+    f_suhu:           streaming=0.467438, batch=0.427888
+    f_arus:           streaming=5.438905, batch=1.032489
+    f_ma_short_p:     streaming=1.269324, batch=1.400767
+    f_ma_long_p:      streaming=1.564882, batch=2.030998
+    f_ma_short_t:     streaming=0.103485, batch=0.158957
+  L2 distance from batch coef: 6.265082
+
+Checkpoint #9:
+  n_trained: 227,520
+  r2_buf_train: 0.000000
+  r2_window_recent: 47.440183
+  total_samples: 1,977,520
+  intercept: 44.191695
+  Key coefs (vs batch):
+    f_tegangan_arus: streaming=-7.531242, batch=-0.965907, ratio=7.7971
+    f_suhu:           streaming=0.582373, batch=0.427888
+    f_arus:           streaming=7.609680, batch=1.032489
+    f_ma_short_p:     streaming=0.795132, batch=1.400767
+    f_ma_long_p:      streaming=1.669306, batch=2.030998
+    f_ma_short_t:     streaming=0.123566, batch=0.158957
+  L2 distance from batch coef: 9.343451
+
+[SAVE] All checkpoints saved to /tmp/all_ridge_checkpoints.json

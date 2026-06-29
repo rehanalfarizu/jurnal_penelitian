@@ -1,0 +1,102 @@
+======================================================================
+HASIL MENTAH — UJI 1 dan UJI 2 (streaming 2,027,520 records)
+======================================================================
+
+Metodologi:
+  - df_stream di-load dari streaming_results.pkl (RecordMetrics list of 2,027,520 items)
+  - hard_indices, soft_indices, drift_signal, noise_std, clean_day di-rekonstruksi
+    ulang dari sensor_data.csv (sama persis dengan injeksi di edge_cloud_streaming.ipynb)
+  - ground-truth anomaly mask: union(hard_indices, soft_indices) = 200 + 2000 = 2200 records
+  - rolling_r2_vec (window=1000) dihitung dengan cumulative-sum trick untuk O(n)
+
+======================================================================
+UJI 1 — Apakah kontaminasi anomali yang menyebabkan R² rendah?
+======================================================================
+Output mentah:
+Jumlah record diinjeksi anomali (ground truth): 2,200 dari 2,027,520
+Mean rolling R² — SEMUA record       : 0.1762
+Mean rolling R² — EXCLUDE anomali    : 0.1762
+Median rolling R² — SEMUA record     : 0.1880
+Median rolling R² — EXCLUDE anomali  : 0.1882
+
+--- Periode-wise mean R² (window=1000, ALL records) ---
+  Bin 0 (idx 0-200,000): mean rolling R² = 0.1557
+  Bin 1 (idx 200,000-400,000): mean rolling R² = 0.1855
+  Bin 2 (idx 400,000-600,000): mean rolling R² = 0.1956
+  Bin 3 (idx 600,000-800,000): mean rolling R² = 0.1691
+  Bin 4 (idx 800,000-1,000,000): mean rolling R² = 0.1849
+  Bin 5 (idx 1,000,000-1,200,000): mean rolling R² = 0.1653
+  Bin 6 (idx 1,200,000-1,400,000): mean rolling R² = 0.1752
+  Bin 7 (idx 1,400,000-1,600,000): mean rolling R² = 0.1571
+  Bin 8 (idx 1,600,000-1,800,000): mean rolling R² = 0.1801
+  Bin 9 (idx 1,800,000-2,000,000): mean rolling R² = 0.1957
+
+--- Periode-wise mean R² (window=1000, CLEAN records only) ---
+  Bin 0 (idx 0-200,000): n_clean=199,788, mean rolling R² = 0.1531
+  Bin 1 (idx 200,000-400,000): n_clean=199,791, mean rolling R² = 0.1857
+  Bin 2 (idx 400,000-600,000): n_clean=199,779, mean rolling R² = 0.1958
+  Bin 3 (idx 600,000-800,000): n_clean=199,785, mean rolling R² = 0.1696
+  Bin 4 (idx 800,000-1,000,000): n_clean=199,794, mean rolling R² = 0.1851
+  Bin 5 (idx 1,000,000-1,200,000): n_clean=199,771, mean rolling R² = 0.1657
+  Bin 6 (idx 1,200,000-1,400,000): n_clean=199,786, mean rolling R² = 0.1756
+  Bin 7 (idx 1,400,000-1,600,000): n_clean=199,783, mean rolling R² = 0.1574
+  Bin 8 (idx 1,600,000-1,800,000): n_clean=199,771, mean rolling R² = 0.1804
+  Bin 9 (idx 1,800,000-2,000,000): n_clean=199,784, mean rolling R² = 0.1960
+
+======================================================================
+UJI 2 — Apakah drift menyebabkan model jadi makin tidak akurat?
+======================================================================
+Output mentah:
+drift_signal di index 0       : 0.0000
+drift_signal di index 50,000  : 0.0500
+drift_signal di index 1,000,000: 1.0000
+drift_signal di index akhir (2027519): 2.0275
+std(clean_day)                : 3.0978
+noise_std (5%)                 : 0.1549
+Rasio drift_akhir / noise_std  : 13.09x
+Rasio drift_akhir / std(clean) : 0.65x
+
+--- MAE per 200K record bin ---
+Bin 0 (idx 0-200,000): MAE = 0.8216 W
+Bin 1 (idx 200,000-400,000): MAE = 0.7628 W
+Bin 2 (idx 400,000-600,000): MAE = 0.7788 W
+Bin 3 (idx 600,000-800,000): MAE = 0.8416 W
+Bin 4 (idx 800,000-1,000,000): MAE = 0.8131 W
+Bin 5 (idx 1,000,000-1,200,000): MAE = 0.8298 W
+Bin 6 (idx 1,200,000-1,400,000): MAE = 0.8098 W
+Bin 7 (idx 1,400,000-1,600,000): MAE = 0.8658 W
+Bin 8 (idx 1,600,000-1,800,000): MAE = 0.8088 W
+Bin 9 (idx 1,800,000-2,000,000): MAE = 0.7950 W
+
+--- Bias (mean error) per 200K bin ---
+Bin 0 (idx 0-200,000): bias = +0.0060 W
+Bin 1 (idx 200,000-400,000): bias = -0.0036 W
+Bin 2 (idx 400,000-600,000): bias = +0.0070 W
+Bin 3 (idx 600,000-800,000): bias = -0.0004 W
+Bin 4 (idx 800,000-1,000,000): bias = -0.0039 W
+Bin 5 (idx 1,000,000-1,200,000): bias = +0.0013 W
+Bin 6 (idx 1,200,000-1,400,000): bias = +0.0016 W
+Bin 7 (idx 1,400,000-1,600,000): bias = -0.0046 W
+Bin 8 (idx 1,600,000-1,800,000): bias = +0.0025 W
+Bin 9 (idx 1,800,000-2,000,000): bias = +0.0029 W
+
+======================================================================
+KONTEKS TAMBAHAN (untuk interpretasi)
+======================================================================
+Static R² (full 2M records, non-rolling): 0.1815
+Correlation(daya, pred_daya): 0.4260
+daya overall std: 8.8186, max: 1998.4758
+pred_daya overall std: 3.7550, max: 484.0769
+daya std per 200K bin (range): 2.7887 ≈ per-bin std
+
+--- Per-bin std for context ---
+  Bin 0: std(daya)=9.0659, std(pred_daya)=3.4924
+  Bin 1: std(daya)=6.0265, std(pred_daya)=3.4265
+  Bin 2: std(daya)=6.5853, std(pred_daya)=3.6323
+  Bin 3: std(daya)=10.0296, std(pred_daya)=3.2314
+  Bin 4: std(daya)=8.6541, std(pred_daya)=3.0488
+  Bin 5: std(daya)=9.2057, std(pred_daya)=2.9465
+  Bin 6: std(daya)=8.2501, std(pred_daya)=2.8418
+  Bin 7: std(daya)=10.7878, std(pred_daya)=3.0906
+  Bin 8: std(daya)=8.2148, std(pred_daya)=3.2114
+  Bin 9: std(daya)=7.6958, std(pred_daya)=2.9784
