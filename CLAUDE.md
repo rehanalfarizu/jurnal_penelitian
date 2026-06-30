@@ -85,8 +85,32 @@ Sumber asli bersifat **multi-node & multi-modalitas**:
 - 30 PDF sudah terdownload di `pdf_references/`
 
 ## Temuan Baru (2026-06-30)
-1. **z=2.5 lebih baik** untuk anomaly detection — FP rate turun drastis
-2. **Rolling mean contamination AUDITED** — record bersih dekat hard anomaly (dist<300) punya R²=-9.43 vs far R²=-11.15 (p=3.61e-13, Cohen's d=0.03). **Kesimpulan: efek praktis TIDAK signifikan.** Low R² bukan disebabkan contamination.
+### Rolling Mean Contamination — v2 Audit (STATIC R², threshold=1000)
+**Skrip:** `robustness_audit_v2.py` — memperbaiki 2 flaw di v1:
+1. *Flaw A:* v1 pakai rolling-window R² (shared deque maxlen=1000) → SEMUA record di window saling terkontaminasi. v2 pakai `static_r2(y_true, y_pred)` independen per grup.
+2. *Flaw B:* v1 pakai threshold dist<300. v2 gunakan dist<1000 (match deque maxlen).
+
+**Hasil v2 (static R², 1,933,228 clean records):**
+| Grup | n | Pct | R²_static | RMSE | MAE |
+|---|---|---|--|--|--|
+| NEAR (dist < 1000) | 186,372 | 9.6% | -0.0949 | 3.7275 | 2.0195 |
+| FAR (dist ≥ 1000) | 1,746,856 | 90.4% | +0.1570 | 3.4344 | 1.7973 |
+| **Delta** | — | — | **-0.2519** | +0.293 | +0.222 |
+
+**Statistik tambahan:**
+- Mann-Whitney U: p=1.37e-02 (significant di α=0.05)
+- Cohen's d (block-level): 0.1577 (small effect)
+- 1,746,856 (90.4%) clean records benar-benar >1000 dari hard anomaly terdekat
+- NEAR blocks ABOVE FAR median: 15.8%, BELOW: 84.2%
+
+**Interpretasi:** Ada perbedaan nyata tapi BESARNYA KECIL (d=0.15). NEAR group RMSE lebih tinggi 8.5% dan R�� lebih rendah 0.25 — sebagian karena rolling mean contamination, sebagian karena **distribution shift** (area dekat hard anomaly secara inheren lebih sulit diprediksi). **Low R² (0.16 vs batch 0.99) BUKAN terutama disebabkan contamination**, tapi karena model streaming Ridge hanya punya 4 fitur vs 18 fitur di batch.
+
+**v1 audit (invalid, d=0.03) diganti v2 (valid, d=0.16).**
+
+### Hasil Prediksi Energi (Batch, 18 fitur, shift(1) anti-leakage)
+- RF: R²_test=0.9952, RMSE=0.211 W (batch, 18 fitur)
+- LR: R²_test=0.9649, RMSE=0.572 W (batch, 18 fitur)
+- SGD Online: R²_test=0.595 (4 fitur, baseline streaming)
 3. **Satu-satunya solusi:** upgrade ke 18 fitur untuk Ridge online, retrain tiap 250K records.
 
 ## Progress Selanjutnya
