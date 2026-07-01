@@ -1,0 +1,87 @@
+{
+  "dataset": {
+    "total_records": 2027520,
+    "far_group": 1807884,
+    "far_train": 1446307,
+    "far_test": 361577,
+    "threshold": 1000
+  },
+  "drift_verification": {
+    "drift_formula": "np.random.randn() * 0.005 * max(abs(V[i]), abs(I[i])) every 10K",
+    "drift_unbounded": true,
+    "drift_signal_last": 7.464982800987795,
+    "drift_signal_max": 14.668264239713347,
+    "drift_signal_min": -0.26251606381704207,
+    "noise_std": 0.15489031886345533,
+    "drift_final_over_noise": 48.19528331895684,
+    "train_max_idx": 1628877,
+    "test_min_idx": 1628878,
+    "no_overlap": true,
+    "train_drift_mean": 7.577118073595774,
+    "train_drift_max": 14.668264239713347,
+    "train_drift_min": 1.1774140890923042,
+    "test_drift_mean": 8.42756357314421,
+    "test_drift_max": 14.668264239713347,
+    "test_drift_min": 5.550576678300251
+  },
+  "batch_reference": {
+    "RF_R2_test_18f": 0.9952,
+    "LR_R2_test_18f": 0.9629,
+    "SGD_R2_test_4f": 0.595
+  },
+  "results": {
+    "Ridge_18f_R2": 0.9127960196518154,
+    "Ridge_18f_RMSE": 1.0958096849278558,
+    "Ridge_18f_MAE": 0.7641111165203581,
+    "RF_18f_R2": 0.9628851211738124,
+    "RF_18f_RMSE": 0.7148929327881384,
+    "RF_18f_MAE": 0.5162810129757619,
+    "RF_deep_R2": 0.972578179875712,
+    "RF_deep_RMSE": 0.6144904236681372,
+    "Ridge_stripped_R2": 0.9973087564155261,
+    "Ridge_stripped_RMSE": 0.15484547178022023,
+    "Ridge_stripped_MAE": 0.12351642372404187,
+    "RF_stripped_R2": 0.9972902796847781,
+    "RF_stripped_RMSE": 0.1553761083003278,
+    "RF_stripped_MAE": 0.12393131959652652
+  },
+  "gap_analysis": {
+    "R_batch_RF_18f": 0.9952,
+    "R_streaming_RF_18f": 0.9628851211738124,
+    "R2_gap": 0.032314878826187554,
+    "R_stripped_RF": 0.9972902796847781
+  },
+  "block_stats": {
+    "rf_train": {
+      "mean": 0.931819400774987,
+      "median": 0.9388864611859491,
+      "n": 145
+    },
+    "rf_test": {
+      "mean": 0.8926036209519342,
+      "median": 0.9200491753245267,
+      "n": 37
+    },
+    "ridge_train": {
+      "mean": 0.755923229689075,
+      "median": 0.816947239745154,
+      "n": 145
+    },
+    "ridge_test": {
+      "mean": 0.7828115025575615,
+      "median": 0.826569139804331,
+      "n": 37
+    },
+    "mwu_rf": {
+      "u": 3526.0,
+      "p": 0.0032067853217912596,
+      "cohens_d": 0.5289365755838041
+    },
+    "mwu_ridge": {
+      "u": 2401.0,
+      "p": 0.32590485251559675,
+      "cohens_d": -0.1667754446655935
+    },
+    "drift_explained": -0.0020902796847781513
+  }
+}
