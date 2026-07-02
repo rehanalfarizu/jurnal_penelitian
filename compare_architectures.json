@@ -1,0 +1,45 @@
+{
+  "n_records": 2027520,
+  "duration_s": 7697242.831,
+  "architectures": [
+    {
+      "architecture": "EDGE_PREFERRED (recorded)",
+      "n": 2027520,
+      "latency_mean_ms": 12.718,
+      "latency_p50_ms": 1.687,
+      "latency_p95_ms": 2.785,
+      "latency_p99_ms": 321.79,
+      "latency_max_ms": 393.672,
+      "energy_mean_mw": 20.413,
+      "energy_total_j": 526353.546,
+      "fraction_routed_cloud": 0.034081,
+      "throughput_records_per_s": 0.3
+    },
+    {
+      "architecture": "FULL_EDGE (counterfactual)",
+      "n": 2027520,
+      "latency_mean_ms": 1.811,
+      "latency_p50_ms": 1.682,
+      "latency_p95_ms": 2.317,
+      "latency_p99_ms": 3.056,
+      "latency_max_ms": 139.337,
+      "energy_mean_mw": 20.351,
+      "energy_total_j": 74738.28,
+      "fraction_routed_cloud": 0.0,
+      "throughput_records_per_s": 0.3
+    },
+    {
+      "architecture": "FULL_CLOUD (counterfactual)",
+      "n": 2027520,
+      "latency_mean_ms": 275.0,
+      "latency_p50_ms": 275.0,
+      "latency_p95_ms": 275.0,
+      "latency_p99_ms": 275.0,
+      "latency_max_ms": 275.0,
+      "energy_mean_mw": 22.151,
+      "energy_total_j": 12350953.311,
+      "fraction_routed_cloud": 1.0,
+      "throughput_records_per_s": 0.3
+    }
+  ]
+}
