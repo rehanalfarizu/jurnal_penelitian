@@ -2,11 +2,22 @@
 
 > File ini dibaca otomatis di awal setiap sesi Claude Code di repo ini.
 > Berisi konteks penelitian yang harus selalu diingat.
+>
+> **Konsolidasi angka**: lihat `CONSOLIDATED_RESULTS.md` untuk satu sumber
+> kebenaran. CLAUDE.md hanya menyimpan konteks + keputusan desain.
 
 ---
 
 ## Judul Penelitian
 **Strategi Arsitektur Edge-Cloud Berbasis Fusi Data Multimodal pada Ekosistem Digital Twin Web-3D untuk Prediksi Energi Bangunan Cerdas**
+
+## Enam Keputusan Desain (final)
+1. **Model = Ridge 18-fitur end-to-end** (satu-satunya canonical).
+2. **Streaming threshold default = z=2.5** → `streaming_results_z25.pkl`.
+3. **Robustness = STATIC R² per group, threshold=1000**.
+4. **Anomali = 200 hard + 2000 soft, pre-injected**.
+5. **Counterfactual arsitektur = bootstrap dari observed distributions**.
+6. **Latensi "real-time" = simulasi** — qualifier wajib saat klaim.
 
 ## Empat Pilar Penelitian
 1. **Edge-Cloud** — Arsitektur hybrid edge-cloud untuk streaming & prediksi real-time
@@ -38,15 +49,34 @@ Sumber asli bersifat **multi-node & multi-modalitas**:
 |---|---|---|---|---|---|
 | RandomForest | 0.9952 | 0.21 | 0.15 | 0.42% | 18 fitur, shift(1) anti-leakage |
 | LinearRegression | 0.9629 | 0.59 | 0.48 | 0.42% | 18 fitur, shift(1) anti-leakage |
-| SGD/Online | 0.5950 | — | — | — | 4 fitur (baseline streaming) |
+
+> Tidak ada model SGD/Online di notebook. Klaim "SGD R²=0.595" yang muncul
+> di draft sebelumnya tidak berasal dari eksperimen apapun di repo ini.
+> Lihat `CONSOLIDATED_RESULTS.md` §6 untuk daftar hal yang tidak boleh diklaim.
 
 ### B. Streaming Edge-Cloud (Ketahanan Arsitektur)
 | Metrik | Nilai |
 |---|---|
 | Edge latency | 1.49 ms/record (SLA <2ms ✓) |
-| Cloud latency | 196 ms (anomali only) |
+| Cloud latency | 196 ms (anomali only) — **simulasi**, bukan pengukuran jaringan |
 | Anomaly rate | 3.24% (z=2.0) → 3.4% (z=2.5) |
 | Throughput | ~1,700 records/second |
+
+### C. Anomaly Recall (2026-07-02 — `evaluate_anomaly_recall.py`)
+| Group | Recall | Precision | F1 |
+|---|---|---|---|
+| HARD  (200) | 65.00% | 0.19% | 0.0038 |
+| SOFT  (2,000) | 43.85% | 1.27% | 0.0247 |
+| COMBINED (2,200) | 45.77% | 1.46% | 0.0282 |
+
+FPR over clean records = 3.36%. Median detection latency = 0 records.
+
+### D. Architecture Counterfactual (2026-07-02 — `compare_architectures.py`)
+| Architecture | mean ms | P95 ms | energy mW | to cloud |
+|---|---|---|---|---|
+| FULL_EDGE | 1.81 | 2.32 | 20.35 | 0.00% |
+| EDGE_PREFERRED | 12.72 | 2.79 | 20.41 | 3.41% |
+| FULL_CLOUD | 275.00 | 275.00 | 22.15 | 100.00% |
 
 ## Arsitektur yang Divalidasi
 ```
@@ -62,6 +92,7 @@ Sumber asli bersifat **multi-node & multi-modalitas**:
 ## File-file Kunci di Repo
 | File | Peran |
 |---|---|
+| `CONSOLIDATED_RESULTS.md` | **Tabel angka final paper (satu sumber kebenaran)** |
 | `edge_cloud_streaming.ipynb` | Notebook streaming Edge-Cloud (z=2.5) |
 | `energy_prediction_models.ipynb` | Validasi akurasi model (LR + RF) — FIXED shift(1) |
 | `sensor_data.csv` | Dataset IoT 2M records (154.7 MB) |
@@ -73,6 +104,10 @@ Sumber asli bersifat **multi-node & multi-modalitas**:
 | `eval_energy_fixed.py` | Script evaluasi model energi (CLI) |
 | `stream_full_audit.py` | Full streaming pipeline (z=2.5, 2M records) |
 | `robustness_audit.py` | Robustness analysis — rolling mean contamination test |
+| `robustness_audit_v2.py` | Static-R² robustness (replaces v1) |
+| `final_drift_ablation_test.py` | Drift on/off ablation |
+| `evaluate_anomaly_recall.py` | Recall / FPR / detection latency |
+| `compare_architectures.py` | Edge vs edge-pref vs cloud counterfactual |
 | `references.md` | 38 jurnal Scopus 2021-2026 |
 
 ## 18 Fitur Input Model (anti-leakage)
@@ -158,7 +193,6 @@ Sumber asli bersifat **multi-node & multi-modalitas**:
 ### Hasil Prediksi Energi (Batch, 18 fitur, shift(1) anti-leakage)
 - RF: R²_test=0.9952, RMSE=0.211 W (batch, 18 fitur)
 - LR: R²_test=0.9649, RMSE=0.572 W (batch, 18 fitur)
-- SGD Online: R²_test=0.595 (4 fitur, baseline streaming)
 
 ## Progress Selanjutnya
 ### Session Notes (2026-06-30)

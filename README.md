@@ -12,6 +12,12 @@
 | `energy_prediction_models.ipynb` | **Akurasi Prediksi Energi** — Feature engineering + LR/RF pada 2M records (FIXED shift(1)) |
 | `sensor_data.csv` | Dataset sensor IoT (154.7 MB, 2.027.520 baris, 8 kolom) — **Git LFS** |
 | `dashboard_digitaltwin/` | Sub-modul TwinSpace (Vue.js + Babylon.js + ESP32 + YOLO + Azure) |
+| `eval_energy_fixed.py` | Static R² evaluator (hold-out test) |
+| `final_drift_ablation_test.py` | Drift on/off ablation — closes 93% of streaming-vs-static R² gap |
+| `robustness_audit_v2.py` | Near/far R² audit (static, threshold=1000) |
+| `evaluate_anomaly_recall.py` | Recall / FPR / detection latency vs ground truth |
+| `compare_architectures.py` | Edge vs edge-preferred vs full-cloud counterfactual |
+| `CONSOLIDATED_RESULTS.md` | Tabel angka final paper (satu sumber kebenaran) |
 
 ### Arsitektur yang Divalidasi
 
@@ -30,6 +36,24 @@
 - **Edge**: 1.49 ms/record (median), SLA <2ms, cukup untuk Digital Twin Web-3D
 - **Cloud**: 196 ms (incl network + heavy processing), hanya untuk anomali
 - **Anomaly rate**: 3.24% dari 2.027.520 records
+
+---
+
+## Keputusan Desain (6 final)
+
+1. **Model = Ridge 18-fitur end-to-end**. Tidak ada SGD 4-fitur. Notebook
+   `edge_cloud_streaming.ipynb` adalah satu-satunya canonical model.
+2. **Streaming threshold default = z=2.5** (bukan 2.0 atau 3.0). File
+   `streaming_results_z25.pkl` adalah hasil canonical.
+3. **Robustness = STATIC R² per group**, threshold = 1000 (matching
+   `deque(maxlen=1000)`). Shared rolling-window R² dari v1 dibuang karena
+   bocor antar group.
+4. **Anomali = 200 hard + 2000 soft, pre-injected**. Ground truth dari
+   `anomaly_indices.pkl`.
+5. **Counterfactual arsitektur = bootstrap dari observed edge/cloud latency
+   & energy distribution**, bukan simulator terpisah.
+6. **Latensi "real-time" = simulasi**. `cloud_latency_ms` adalah parameter
+   yang di-inject untuk eksperimen routing, bukan pengukuran jaringan nyata.
 
 ---
 
