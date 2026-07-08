@@ -8,7 +8,7 @@
 
 | File | Deskripsi |
 |---|---|
-| `edge_cloud_streaming.ipynb` | **Streaming Edge-Cloud** — Validasi pipeline real-time Ridge + anomaly detection |
+| `edge_cloud_streaming.ipynb` | **Streaming Edge-Cloud** — Validasi pipeline near-real-time Ridge + anomaly detection |
 | `energy_prediction_models.ipynb` | **Akurasi Prediksi Energi** — Feature engineering + LR/RF pada 2M records (FIXED shift(1)) |
 | `sensor_data.csv` | Dataset sensor IoT (154.7 MB, 2.027.520 baris, 8 kolom) — **Git LFS** |
 | `dashboard_digitaltwin/` | Sub-modul TwinSpace (Vue.js + Babylon.js + ESP32 + YOLO + Azure) |
@@ -37,6 +37,20 @@
 - **Cloud**: 196 ms (incl network + heavy processing), hanya untuk anomali
 - **Anomaly rate**: 3.24% dari 2.027.520 records
 
+### Status Modul Digital Twin: Reference Architecture / Prototype
+
+Sesuai keputusan desain D4, modul `dashboard_digitaltwin/` diposisikan sebagai **reference architecture / prototype**, bukan Digital Twin fungsional yang tervalidasi. Bukti:
+
+- **Yang ada:** Vue 3 + Babylon.js 3D rendering (glTF floor plan + sensor icon overlay), AC 3D primitive dengan particle effect, Cesium 3D map viewer, 7 composables (Azure telemetry polling, dummy data, MQTT), ESP32 firmware (DHT11 + ZMPT101B + SCT013), RPi YOLO people detection, Azure Functions untuk IoT data pipeline.
+- **Yang TIDAK ada:**
+  1. Tidak ada physics-based thermal/electrical simulation (no thermal solver, no HVAC model, no occupancy-driven energy model).
+  2. Tidak ada per-room/zone energy breakdown — hanya single aggregate kW prediction.
+  3. Tidak ada evaluasi prediksi-vs-terukur per ruangan (no error metric per zone).
+  4. Fitur model yang di-deploy (5 fitur) tidak match dengan 18-fitur notebook energy_prediction_models.
+  5. Tidak ada integrasi antara pipeline streaming 2M-record di notebook dengan dashboard ML models (3 model .pkl yang berbeda dilatih via script terpisah).
+
+**Verdict:** Untuk paper, modul ini layak disebut "implemented reference architecture" dengan cakupan visualisasi 3D + sensor overlay + arsitektur IoT penuh. **Jangan diklaim** sebagai Digital Twin fungsional/tervalidasi kecuali physics-based simulation + per-room evaluation ditambahkan (lihat `AUDIT_REPORT.md` Bagian 4 untuk detail).
+
 ---
 
 ## Keputusan Desain (6 final)
@@ -52,7 +66,7 @@
    `anomaly_indices.pkl`.
 5. **Counterfactual arsitektur = bootstrap dari observed edge/cloud latency
    & energy distribution**, bukan simulator terpisah.
-6. **Latensi "real-time" = simulasi**. `cloud_latency_ms` adalah parameter
+6. **Latensi "near-real-time" = simulasi**. `cloud_latency_ms` adalah parameter
    yang di-inject untuk eksperimen routing, bukan pengukuran jaringan nyata.
 
 ---
@@ -67,27 +81,27 @@
 | Linear Regression | 0.9950+ | **0.9629→FIXED** | ~0.588 | ~0.479 | ~0.42 | ~0.3s |
 | Random Forest | 0.9995+ | **0.9952→FIXED** | ~0.212 | ~0.153 | ~0.42 | ~256s |
 
-**Catatan:** Setelah fix `.shift(1)` pada rolling means (anti-leakage), kedua model mempertahankan performa tinggi karena fitur V×I sudah memberikan informasi deterministik. Gap train-test <0.04 untuk RF, menunjukkan model tidak overfit berlebihan.
+**Catatan:** Setelah fix `.shift(1)` pada rolling means (anti-leakage), kedua model mempertahankan performa tinggi karena fitur 18-fitur mencakup base numerik, time period, dan rolling/window features. Gap train-test <0.04 untuk RF, menunjukkan model tidak overfit berlebihan.
 
-### B. Ketahanan Arsitektur Edge-Cloud (edge_cloud_streaming.ipynb)
-> Validasi: satu-shot vs periodic retraining
+### B. Streaming Edge-Cloud (Ketahanan Arsitektur)
+> Validasi: adaptive retraining + drift compensation — lihat CONSOLIDATED_RESULTS.md § 1–2
 
-| Skenario | Z-Score | Anomalies | One-shot R² | Retrained R² |
-|---|---|---|---|---|
-| z=2.0 (lama) | 2.0 | 69,099 (6.9%) | ~-1.7 (chunk 1) | 0.35 (avg chunks 29-40) |
-| z=2.5 (baru) | 2.5 | 69,099 (3.4%) | ~-1.7 (chunk 1) | 0.27 (avg chunks 36-41) |
+| Metrik | Nilai |
+|---|---|
+| Computational throughput | 3,335 rec/s (benchmarked, see CONSOLIDATED_RESULTS § 1) |
+| Edge latency (wall-clock) | 1.81 ms/record (EDGE_ONLY), 12.72 ms (EDGE_PREFERRED w/ 3.4% cloud) |
+| Cloud latency | 275 ms (hardcoded assumption — SIMULATED, not measured) |
+| Anomaly rate | 3.41% (z=2.5) — routed to cloud |
+| Batch energy model (RF) | R²=0.9952 (see §A above) |
 
-**Kesimpulan:** 
-- One-shot model (tidak pernah retrain) memiliki R² sangat rendah karena drift/degradation sepanjang 2M records.
-- Periodic retraining setiap 250K records meningkatkan R² dari -100an menjadi 0.2-0.7, membuktikan **pentingnya adaptive retraining di edge**.
-- R² tetap rendah bahkan setelah retrain karena masalah fundamental: model meramalkan `V×I` dari fitur `V` dan `I` (bukan dari kondisi lingkungan), sehingga tidak relevan untuk "building energy prediction" nyata.
+**Drift ablation** (CONSOLIDATED_RESULTS.md § 2): accumulated drift explains **93.5%** of the streaming-vs-batch R² gap. After drift stripping, RF reaches R²=0.997 (virtually identical to batch). The remaining gap is Ridge linearity (< 2%).
 
 ### Perbandingan Dua Hasil
 
-| Aspek | Prediksi Energi (A) | Ketahanan Edge-Cloud (B) |
+| Aspek | Prediksi Energi (A) | Streaming Edge-Cloud (B) |
 |---|---|---|
-| Question | "Seberapa akurat memprediksi daya?" | "Seberapa robust pipeline edge-clou d?" |
-| Method | Batch train-test split | Online streaming + retrain |
-| Best R² | **0.9952** (RF) | **~0.35** (Ridge retrain every 250K) |
-| Insight kunci | Feature engineering (V×I, time, rolling) = akurasi tinggi | Tanpa retrain = R² hancur oleh drift |
-| Validitas ilmiah | Tinggi (dengan catatan V×I leakage) | Tinggi, tapi R² rendah bukan bug |
+| Question | "Seberapa akurat memprediksi daya?" | "Seberapa robust pipeline edge-cloud terhadap drift?" |
+| Method | Batch train-test split (80/20) | Online streaming + periodic retrain + drift ablation |
+| Best R² | **0.9952** (RF batch) | **0.9128** (Ridge streaming, CONSOLIDATED §2) |
+| Insight kunci | 18 fitur + shift(1) = akurasi tinggi | Drift explains 93.5% of streaming-vs-batch gap |
+| Validitas ilmiah | Tinggi (clean feature engineering) | Tinggi — drift ablation closed, robustness audited |

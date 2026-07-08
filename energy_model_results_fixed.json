@@ -1,28 +1,61 @@
-[
-  {
-    "model": "Linear Regression",
-    "rmse": 0.5720005965816624,
-    "mae": 0.46661499673059853,
-    "r2": 0.9648540585922263,
-    "mape": 1.272360800487915,
-    "r2_train": 0.9644058995093515,
-    "adj_r2": 0.9648524984187419,
-    "explained_variance": 0.9648579880933831,
-    "median_abs_error": 0.4376785288610847,
-    "bias": 0.0060482203055331465,
-    "train_time": 1.3349039554595947
-  },
-  {
-    "model": "Random Forest",
-    "rmse": 0.21097782051047556,
-    "mae": 0.1528840933246939,
-    "r2": 0.9952185918186462,
-    "mape": 0.4154751007220872,
-    "r2_train": 0.9953428617060361,
-    "adj_r2": 0.9952183795657953,
-    "explained_variance": 0.9952186446079766,
-    "median_abs_error": 0.11604872914517728,
-    "bias": 0.0007010225173205776,
-    "train_time": 259.4710168838501
-  }
-]
+{
+  "title": "Energy Prediction Models \u2014 Forecasting Paradigm (No V\u00d7I Circularity)",
+  "methodology": "Forecasting: predict daya(t) from exogenous features at time t",
+  "caveat": "Target 'daya' \u2248 V\u00d7I + noise. This is power state estimation, not building energy prediction.",
+  "dataset": "sensor_data.csv",
+  "total_records": 2027520,
+  "sample_size": 2027520,
+  "n_features": 19,
+  "feature_columns": [
+    "suhu",
+    "kelembaban",
+    "tegangan",
+    "arus",
+    "jumlah_orang",
+    "suhu_kelembaban",
+    "hour",
+    "dayofweek",
+    "day",
+    "hour_sin",
+    "hour_cos",
+    "dow_sin",
+    "dow_cos",
+    "time_period_evening",
+    "time_period_midday",
+    "time_period_morning",
+    "time_period_night",
+    "suhu_ma_short",
+    "suhu_ma_long"
+  ],
+  "train_size": 1622015,
+  "test_size": 405503,
+  "results": [
+    {
+      "model": "Ridge",
+      "r2": 0.9590430274521045,
+      "adj_r2": 0.9590411083026495,
+      "rmse": 0.617479960959564,
+      "mae": 0.5266593527110058,
+      "mape": 1.4349906584437069,
+      "ev": 0.9590549138882517,
+      "bias": 0.010519249968863482
+    },
+    {
+      "model": "Random Forest",
+      "r2": 0.9933080012392285,
+      "adj_r2": 0.9933076876675708,
+      "rmse": 0.2495955685829258,
+      "mae": 0.1771775088719348,
+      "mape": 0.48204634879874575,
+      "ev": 0.993308172220877,
+      "bias": 0.0012616349008135923
+    }
+  ],
+  "changes_from_previous": [
+    "Removed V\u00d7I interaction (circularity)",
+    "Removed daya rolling means (target leakage)",
+    "Added sin/cos time encoding",
+    "Switched LR\u2192Ridge (\u03b1=0.01)",
+    "Reduced feature count from 18 to ~13"
+  ]
+}

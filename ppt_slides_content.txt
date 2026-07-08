@@ -1,0 +1,409 @@
+================================================================================
+SLIDE 1 — COVER
+================================================================================
+JUDUL:
+Arsitektur Edge-Cloud untuk Estimasi Daya Near-Real-Time Bangunan Cerdas
+Terintegrasi Digital Twin Web-3D
+
+NAMA: [Masukkan Nama Anda]
+NIM:  [Masukkan NIM Anda]
+PROGRAM STUDI: [Masukkan Prodi]
+JURUSAN: [Masukkan Jurusan]
+FAKULTAS: [Masukkan Fakultas]
+UNIVERSITAS: [Masukkan Universitas]
+TAHUN: 2026
+
+================================================================================
+SLIDE 2 — LATAR BELAKANG
+================================================================================
+1. KONTEKS
+   - Bangunan cerdas mengonsumsi ~40% energi global dan menghasilkan ~30%
+     emisi gas rumah kaca.
+   - Estimasi konsumsi daya secara near-real-time dibutuhkan untuk optimasi energi,
+     preventive maintenance, dan integrasi Digital Twin.
+
+2. MASALAH TEKNIS
+   - Arsitektur cloud-only mengalami latensi tinggi (~275 ms) yang tidak layak
+     untuk kontrol near-real-time.
+   - Arsitektur edge-only menghemat latensi (<2 ms) tapi kehilangan komputasi
+     berat untuk model kompleks dan sinkronisasi Digital Twin.
+
+3. SOLUSI: ARSITEKTUR EDGE-CLOUD HYBRID
+   - Rekaman normal (96,8%) diproses di edge dengan latensi <2 ms.
+   - Rekaman anomali (3,2%) dialihkan ke cloud untuk pemrosesan berat dan
+     sinkronisasi Digital Twin Web-3D.
+
+4. TANTANGAN RISET
+   - Model streaming cenderung mengalami drift akumulasif seiring waktu,
+     menurunkan kualitas prediksi.
+   - Belum ada studi yang mengkuantifikasi pengaruh drift pada pipeline
+     estimasi daya edge-cloud secara eksplisit.
+
+================================================================================
+SLIDE 3 — RUMUSAN MASALAH
+================================================================================
+1. BAGAIMANA merancang arsitektur edge-cloud hybrid yang efisien untuk
+   estimasi daya near-real-time bangunan cerdas?
+
+2. BERPENGARAH SEBERAPA drift akumulatif terhadap akurasi model prediksi
+   dalam pipeline streaming, dan seberapa besar kontribusinya terhadap
+   penurunan R^2?
+
+3. BAGAIMANA ketahanan model streaming di sekitar kejadian anomali keras?
+   Apakah performa degradasi secara signifikan saat berada dekat dengan
+   anomali?
+
+4. BERPENGARAH SEBERAPA efektivitas skema deteksi anomali berbasis z-score
+   pada energy_score dalam mengidentifikasi anomali yang disuntikkan?
+
+================================================================================
+SLIDE 4 — BATASAN MASALAH
+================================================================================
+1. DATA
+   - Menggunakan dataset sensor IoT: 2.027.520 rekaman, 8 kolom
+     (suhu, kelembaban, tegangan, arus, daya, jumlah_orang, jam, device_id).
+   - Data berasal dari ESP32 (DHT11, ZMPT101B, SCT013) dan RPi Gateway,
+     dikumpulkan selama ~89 hari.
+
+2. MODEL
+   - Fokus pada model Ridge Regression (streaming) dan Random Forest (batch)
+     untuk estimasi daya.
+   - Deteksi anomali menggunakan z-score pada composite energy_score.
+   - Fitur: 19 fitur (5 sensor + 1 interaksi VxI + 3 rolling + 5 one-hot
+     + 5 time period).
+
+3. ARSITEKTUR
+   - Edge processing: preprocessing + sensor fusion + anomaly detection +
+     prediksi Ridge (~1,3 ms total per tahap).
+   - Cloud processing: network transfer (45 ms) + heavy processing (150 ms)
+     + Digital Twin sync (80 ms) = ~275 ms.
+   - Nilai latensi cloud bersifat asumsi skenario akademik, belum diukur
+     melalui benchmark round-trip jaringan nyata.
+
+4. DIGITAL TWIN
+   - Modul Digital Twin Web-3D diposisikan sebagai "Implemented Reference
+     Architecture / Prototype" (Vue 3 + Babylon.js), bukan platform yang
+     tervalidasi secara penuh.
+   - Belum ada physics-based thermal simulation atau per-room energy
+     breakdown.
+
+================================================================================
+SLIDE 5 — ALUR PENELITIAN (6 TAHAP - SESUAI GAMBAR)
+================================================================================
+
+  TAHAP 1: Inisiasi & Identifikasi
+    - Identifikasi masalah estimasi daya near-real-time
+    - Tinjauan literatur Edge-Cloud, Digital Twin, drift detection
+    - Definisi scope & batasan masalah
+
+         |
+         v
+
+  TAHAP 2: Akuisisi Data Multimodal / Perception Layer
+    - ESP32 sensor: suhu (DHT11), tegangan (ZMPT101B), arus (SCT013)
+    - RPi Camera: YOLO people counting
+    - RPi Gateway: aggregate metadata
+    - Dataset: 2.027.520 records, ~89 hari
+
+         |
+         v
+
+  TAHAP 3: Perancangan Arsitektur Edge-Cloud
+    - Edge: preprocess + fusion + anomaly det. + Ridge predict
+    - Cloud: heavy processing + Digital Twin sync
+    - Routing: 96,8% edge / 3,4% cloud
+
+         |
+         v
+
+  TAHAP 4: Integrasi & Fusi Data / Level of Integration
+    - Feature engineering: 19 fitur (sensor + interaksi + rolling + one-hot + time)
+    - Streaming pipeline (17 fitur, Ridge, buffer retrain)
+    - Batch model (19 fitur, Ridge + Random Forest)
+    - Z-score anomaly detection (threshold z=2,5)
+
+         |
+         v
+
+  TAHAP 5: Pengembangan Ekosistem Web-3D & Kontrol
+    - Digital Twin Frontend: Vue 3 + Babylon.js 3D rendering
+    - Azure Functions: IoTHub -> Storage, telemetry, AC recommendation
+    - Firmware ESP32 + RPi YOLO people detection
+    - Status: Implemented Reference Architecture / Prototype
+
+         |
+         v
+
+  TAHAP 6: Evaluasi Performa Arsitektur
+    - Drift Ablation: 93,5% gap R^2 explained by drift
+    - Robustness Audit: Near/Far R^2 degradation (delta = -0,252)
+    - Anomaly Recall: 65% hard, 44% soft, FPR 3,36%
+    - Architecture Compare: 152x faster than full cloud
+    - Throughput Benchmark: 3.335 rec/s computational throughput
+
+================================================================================
+SLIDE 6 — HASIL PENELITIAN (1 dari 2)
+================================================================================
+
+A. AKURASI MODEL BATCH (Random Forest, 19 fitur)
+   -----------------------------------------------------------------------
+   - R^2 Test:         0,9952
+   - RMSE:            0,21 Watt
+   - MAE:             0,15 Watt
+   - MAPE:            0,42%
+   - Validasi:        shift(1) anti-target leakage, split chronological 80/20
+
+B. AKURASI MODEL BATCH (Linear Regression / Ridge)
+   -----------------------------------------------------------------------
+   - R^2 Test:         0,9649
+   - RMSE:            0,57 Watt
+   - MAE:             0,47 Watt
+
+C. STREAMING PIPELINE - EDGE vs CLOUD ROUTING
+   -----------------------------------------------------------------------
+   - Total rekaman:   2.027.520
+   - Edge (normal):   1.961.790 (96,8%) -> Latensi ~1,3 ms
+   - Cloud (anomali): 69.099 (3,4%) -> Latensi ~275 ms
+   - Computational throughput: 3.335 rekaman/detik
+   - Data arrival rate fisik: 0,3 rekaman/detik
+   -> Sistem memiliki >10.000x spare compute headroom
+
+D. PERBANDINGAN ARSITEKTUR
+   -----------------------------------------------------------------------
+   - FULL_EDGE:       1,81 ms mean latency, 20,35 mW energy
+   - EDGE_PREFERRED:  12,72 ms mean latency, 20,41 mW energy
+   - FULL_CLOUD:      275 ms mean latency, 22,15 mW energy
+   -> Edge-Preferred 152x lebih cepat daripada Full-Cloud
+
+================================================================================
+SLIDE 7 — HASIL PENELITIAN (2 dari 2)
+================================================================================
+
+E. DRIFT ABLATION STUDY (Penjelasan Gap R^2)
+   -----------------------------------------------------------------------
+   - Gap R^2 batch vs streaming: 0,0323
+   - Setelah drift di-stripping, gap menutup menjadi 0,0021
+   - Persentase gap yang dijelaskan oleh drift: 93,5%
+   -> Drift akumulatif (random-walk) EXPLAINING hampir seluruh penurunan
+      performa streaming, bukan kelemahan model.
+   - Drift signal max: 14,67 W (48x dari noise std = 0,15 W)
+
+F. DRIFT-STRIPPED R^2 (Verifikasi)
+   -----------------------------------------------------------------------
+   - Ridge + drift stripped:    R^2 = 0,9973
+   - Random Forest + drift stripped: R^2 = 0,9973
+   -> Kedua model mencapai akurasi batch ketika drift dieliminasi.
+
+G. ROBUSTNESS AUDIT - NEAR vs FAR ANOMALI
+   -----------------------------------------------------------------------
+   - FAR dari anomali (90,4% data): R^2 = 0,157, RMSE = 3,43 W
+   - NEAR anomali (9,6% data):      R^2 = -0,095, RMSE = 3,73 W
+   - Delta R^2: -0,2519
+   -> Model Ridge di NEAR anomali WORSE THAN naive mean baseline!
+      Ini temuan penting: drift terkonsentrasi di sekitar event anomali.
+
+H. ANOMALY DETECTION PERFORMANCE
+   -----------------------------------------------------------------------
+   - Recall hard anomaly: 65,00%
+   - Recall soft anomaly: 43,85%
+   - Combined recall:     45,77%
+   - False Positive Rate: 3,36% (68.092 dari 2.025.320 clean records)
+   - Detection latency: median=0 records, mean=37 records
+
+================================================================================
+SLIDE 8 — KESIMPULAN
+================================================================================
+1. ARSITEKTUR EDGE-CLOUD HYBRID VALID
+   - Hybrid Edge-Preferred mencapai latensi rata-rata 12,72 ms dengan hanya
+     3,4% rekaman di-route ke cloud.
+   - 152x lebih cepat dibanding Full-Cloud (275 ms) dengan biaya energi
+     yang hampir identik (~20,4 mW).
+   - Compute throughput 3.335 rec/s memberi headroom >10.000x di atas
+     data arrival rate 0,3 rec/s.
+
+2. DRIFT AKUMULATIF PENYEBAB UTAMA PENURUNAN R^2 STREAMING
+   - 93,5% gap R^2 batch (0,9952) vs streaming (0,9629) dijelaskan oleh
+     drift akumulatif, bukan keterbatasan model.
+   - Ketika drift di-stripping, R^2 streaming mencapai 0,9973 - setara
+     batch reference.
+   - Insight: model online maintenance (retrain berkala atau drift
+     compensation) dapat mempertahankan akurasi tinggi.
+
+3. MODEL STREAMING REDUP DI SEKITAR ANOMALI KERAS
+   - R^2 di area dekat anomali turun menjadi -0,095 (lebih buruk dari
+     baseline naif mean).
+   - Drift terkonsentrasi di sekitar event anomali.
+   - Membuka arah riset: adaptive drift compensation layer.
+
+4. DETEKSI ANOMALI MEMUASKAN UNTUK HARD ANOMALI
+   - Recall 65% untuk hard anomaly dengan FPR hanya 3,36%.
+   - Limitasi: precision rendah (1,46%) karena z-score threshold 2,5
+     terlalu sensitif terhadap distribusi data.
+
+5. DIGITAL TWIN WEB-3D: REFERENCE ARCHITECTURE
+   - Implementasi frontend (Vue 3 + Babylon.js) dan firmware IoT (ESP32)
+     telah ada sebagai reference architecture / prototype.
+   - Limitasi: belum ada physics-based simulation, evaluasi prediksi vs
+     terukur per ruangan masih terbuka untuk future work.
+
+6. KETERBATASAN STUDI
+   - Nilai latensi cloud bersifat asumsi skenario akademik (belum
+     diukur via benchmark round-trip jaringan nyata).
+   - Target daya approx V x I, sehingga akurasi R^2=0,995 merepresentasikan
+     "estimasi daya" bukan "prediksi energi eksogen."
+
+================================================================================
+REKOMENDASI VISUALISASI PER SLIDE
+================================================================================
+
+SLIDE 1 — COVER
+  - Logo universitas (center-top, 15% height)
+  - Judul + nama/NIM di center
+  - Background: gambar bangunan cerdas minimalist / circuit pattern low-opacity
+
+SLIDE 2 — LATAR BELAKANG
+  - Visual 1 (full width, bawah text): `streaming_pipeline_diagram.png`
+    Diagram alur Edge-Cloud hybrid: IoT Sensors → Edge (preprocess + anomaly detect +
+    Ridge predict) → Normal(96,8%,<2ms)/Anomali(3,2%) → Cloud(~275ms) → Digital Twin
+    Penempatan: lebar penuh slide, tinggi ~35% bawah
+  - Visual 2 (kanan atas): Statistik 40% energi global, 30% emisi
+
+SLIDE 3 — RUMUSAN MASALAH
+  - Tidak butuh gambar khusus
+  - Bisa pakai icon/question mark di tiap pertanyaan untuk visual break
+  - Atau: 4 kolom vertikal dengan icon berbeda untuk setiap rumusan masalah
+
+SLIDE 4 — BATASAN MASALAH
+  - Visual 1 (kiri): `v7_fig5_architecture.png`
+    Diagram arsitektur sistem (Node-RED + IoT Gateway + Edge-Cloud routing)
+    Sudah bagus, ukuran ~166KB
+  - Visual 2 (kanan): Ringkasan teknis singkat
+    ESP32 sensors → RPi Gateway → Edge (Ridge+Z-Score) → Cloud → Digital Twin
+
+SLIDE 5 — ALUR PENELITIAN (6 TAHAP)
+  - File: `alur penelitian4.jpg` (flowchart 6 tahap dari mahasiswa)
+  - Pastikan resolusi tinggi dan warna konsisten
+  - Atau buat ulang dengan tools draw.io / Lucidchart jika belum ada
+
+SLIDE 6 — HASIL PENELITIAN (1 dari 2)
+  Visual 1 — `anomaly_rate_pie.png`: Pie Chart distribusi routing
+    - Normal (96,59%) hijau, Hard Anomaly merah, Soft Anomaly orange, Others abu-abu
+    - Total: 2.027.520 records
+    - Penempatan: kiri slide, ukuran ~50%x70%
+  Visual 2 — `architecture_comparison_bar.png`: Perbandingan arsitektur
+    - FULL_EDGE 1,81ms (hijau), EDGE_PREFERRED 12,72ms (kuning), FULL_CLOUD 275ms (merah)
+    - Double Y-axis: kiri = latensi (log scale), kanan = energi (mW)
+    - Penempatan: kanan slide, ukuran ~50%x70%
+  Visual 3 — `v7_fig2_latency_hist.png`: Histogram latensi edge vs cloud
+    - Edge: 1,3 ms (biru), Cloud: 276,3 ms (orange), ratio 211x
+    - Penempatan: bisa replace Visual 1 atau di slide berikutnya
+  Visual 4 — `v7_fig1_timeseries.png`: Pola data sensor (sample)
+    - X-axis: timestamp (89 hari), Y-axis: nilai sensor
+    - Penempatan: slide tambahan atau appendix
+
+SLIDE 7 — HASIL PENELITIAN (2 dari 2)
+  Visual 1 — `drift_ablation_plot.png`: Line chart R² drift ablation
+    - 4 lines: RF Batch, Ridge Batch, RF Streaming+Drift, Ridge Streaming+Drift
+    - Annotation: "93,5% gap dijelaskan oleh drift akumulatif"
+    - Training region (hijau) vs Testing region (merah)
+    - Penempatan: kiri atas slide, ukuran ~50%x60%
+  Visual 2 — `confusion_matrix_anomaly.png`: Confusion Matrix Anomaly Detection
+    - Grid 2x2 dengan persentase: TP=96,64%, FP=3,36%, FN=35%, TN=65%
+    - Penempatan: kanan atas slide, ukuran ~40%x50%
+  Visual 3 — `drift_stripped_r2_bar.png`: Bar chart drift-stripped R²
+    - 5 models: Ridge Streaming, Ridge+Stripped, RF Streaming, RF+Stripped, RF Batch
+    - Annotation: gap -0,0323 dijelaskan 93,5% oleh drift
+    - Penempatan: kiri bawah slide, ukuran ~50%x35%
+  Visual 4 — `near_far_boxplot.png`: Boxplot Near vs Far dari Anomali
+    - FAR: R²=0,157 (hijau, n=1.746.856), NEAR: R²=-0,095 (merah, n=186.372)
+    - Annotation: delta=-0,2519, p=0,0137, Cohen's d=0,158
+    - NEAR group LEBIH BURUK dari baseline naif (R²<0)!
+    - Penempatan: kanan bawah slide, ukuran ~40%x35%
+
+SLIDE 8 — KESIMPULAN
+  - Visual 1 (kiri): `summary_radar_chart.png` — Radar chart perbandingan arsitektur
+    Axis: Latency, Accuracy, Energy, Throughput, Recall (0-100)
+    3 overlays: Full-Edge (hijau), Full-Cloud (merah), Edge-Preferred (biru)
+  - Visual 2 (kanan): `future_work_timeline.png` — Roadmap future work
+    Short-term (merah), Mid-term (orange), Long-term (hijau)
+    Items: Drift Compensation Layer, Adaptive Z-Score, Non-linear Online Model (GBM),
+           Real Network Latency Bench, Physics-based Thermal Sim, Per-room Energy Breakdown,
+           Production DT Platform
+  - Icon/checklist untuk 6 poin kesimpulan di bagian bawah
+
+================================================================================
+DAFTAR FILE VISUALISASI YANG TERSEDIA DI PROJECT
+================================================================================
+
+SEMUA FILE SUDAH ADA DI ROOT FOLDER (14 file PNG):
+
+[SUDAH ADA] File hasil notebook evaluasi:
+  - v7_fig1_timeseries.png — Time series data sensor (89 hari, 5 jenis sensor) [Slide 6/Appendix]
+  - v7_fig2_latency_hist.png — Histogram latensi Edge 1,3ms vs Cloud 276,3ms (ratio 211x) [Slide 6]
+  - v7_fig3_energy.png — Distribusi konsumsi energi (Watt) [Slide 6/Appendix]
+  - v7_fig4_accuracy.png — Histogram residual/error prediksi (RMSE ~0,2-0,6W) [Slide 6/Appendix]
+  - v7_fig5_architecture.png — Arsitektur Node-RED + IoT Gateway + Digital Twin [Slide 4]
+
+[SUDAH ADA] Flowchart penelitian:
+  - alur penelitian4.jpg — Flowchart 6 tahap penelitian (Slide 5)
+
+[BARU DIGENERATE] Visualisasi presentasi (9 file):
+  - streaming_pipeline_diagram.png — Alur pipeline Edge-Cloud hybrid [Slide 2]
+  - anomaly_rate_pie.png — Pie chart distribusi: 96,59% normal, 3,24% anomali [Slide 6]
+  - architecture_comparison_bar.png — Bar chart latensi+energi 3 arsitektur (double Y-axis) [Slide 6]
+  - drift_ablation_plot.png — Line chart R² drift ablation study [Slide 7]
+  - confusion_matrix_anomaly.png — Confusion matrix anomaly detection (recall 65%) [Slide 7]
+  - drift_stripped_r2_bar.png — Bar chart drift-stripped R² comparison [Slide 7]
+  - near_far_boxplot.png — Boxplot Near vs Far dari anomali (delta R² = -0,252) [Slide 7]
+  - summary_radar_chart.png — Radar chart perbandingan 3 arsitektur [Slide 8]
+  - future_work_timeline.png — Roadmap future work 3 phase [Slide 8]
+
+PENEMPATAN VISUALISASI PER SLIDE:
+  Slide 2:  streaming_pipeline_diagram.png
+  Slide 4:  v7_fig5_architecture.png
+  Slide 5:  alur penelitian4.jpg
+  Slide 6:  anomaly_rate_pie.png + architecture_comparison_bar.png (+ v7_fig2_latency_hist.png opsi)
+  Slide 7:  drift_ablation_plot.png + confusion_matrix_anomaly.png + drift_stripped_r2_bar.png + near_far_boxplot.png
+  Slide 8:  summary_radar_chart.png + future_work_timeline.png
+
+Cara generate ulang:
+  python generate_slides_visuals.py
+
+================================================================================
+REFERENSI FIGURE / GAMBAR SINGKAT UNTUK SETIAP SLIDE:
+  Cover:          Logo universitas
+  Slide 2:        streaming_pipeline_diagram.png (alur Edge→Cloud→DT)
+  Slide 4:        v7_fig5_architecture.png (Node-RED/IoT/Digital Twin)
+  Slide 5:        alur penelitian4.jpg (flowchart 6 tahap)
+  Slide 6 (kir):  anomaly_rate_pie.png (routing 96,8% vs 3,4%)
+  Slide 6 (kanan): architecture_comparison_bar.png (latensi+energi 3 arsitektur)
+  Slide 7 (ki):   drift_ablation_plot.png (R² ablation)
+  Slide 7 (ka):   confusion_matrix_anomaly.png (recall 65%)
+  Slide 7 (bk):   drift_stripped_r2_bar.png (drift-stripped R²)
+  Slide 7 (ka):   near_far_boxplot.png (robustness audit delta R²=-0,252)
+  Slide 8 (ki):   summary_radar_chart.png (radar 3 arsitektur)
+  Slide 8 (kan):  future_work_timeline.png (roadmap 3 fase)
+
+================================================================================
+FILE DI ROOT FOLDER (sudah sesuai fix dari worktree):
+================================================================================
+1. energy_prediction_models.ipynb  - FIXED (shift(1), 19 fitur, RF R^2=0.9952)
+2. edge_cloud_streaming.ipynb      - FIXED (z=2.5, buffering fix, R^2 streaming)
+3. energy_model_results_fixed.json - hasil evaluasi batch model
+4. AUDIT_REPORT.md                 - audit lengkap semua klaim
+5. CLAUDE.md                       - keputusan desain (D1-D6)
+6. README.md                       - README terkini
+7. ppt_slides_content.txt          - file ini (konten PPT)
+
+CATATAN:
+- Notebook di root = versi worktree (git worktree berbagi file)
+- File JSON evaluasi (compare_architectures, drift_ablation, dll.)
+  belum di-save ke disk di sesi ini - jalankan ulang script evaluasi
+  untuk generate jika diperlukan:
+
+  python eval_energy_fixed.py            -> energy_model_results_fixed.json
+  python final_drift_ablation_test.py    -> final_drift_ablation_results.json
+  python robustness_audit_v2.py          -> robustness_audit_v2.json
+  python evaluate_anomaly_recall.py      -> anomaly_recall.json
+  python compare_architectures.py        -> compare_architectures.json
+  python benchmark_throughput.py         -> throughput_benchmark.json
