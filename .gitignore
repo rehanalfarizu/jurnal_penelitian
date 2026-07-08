@@ -291,3 +291,51 @@ generate_92k_dataset.py
 generate_primary_dataset.py
 generate_sensor_data.py
 generate_slides_visuals.py
+
+# Cleanup 2026-07 — orphan scripts/data no longer part of research pipeline
+# Scripts
+audit_complete.py
+robustness_audit.py
+stream_v7.py
+streaming_analysis_v2.py
+streaming_validation_v2.py
+eval_energy_fixed.py
+evaluate_anomaly_recall.py
+compare_architectures.py
+compare_architectures.json
+robustness_audit_v2.py
+robustness_audit_v2.json
+final_drift_ablation_ridge.joblib
+final_drift_ablation_scaler.joblib
+final_drift_ablation_test.py
+final_drift_ablation_results.json
+final_drift_ablation_data.pkl
+v7_visualization.ipynb
+
+# Debug/log txt files
+*_hasil_mentah.txt
+*_verifikasi.txt
+ppt_slides_content.txt
+
+# Decommissioned PKL artifacts (non-core)
+anomaly_indices.pkl
+streaming_results_z25.pkl
+streaming_metrics_v2_final.pkl
+
+# Slide/presentation PNGs
+anomaly_rate_pie.png
+architecture_comparison_bar.png
+confusion_matrix_anomaly.png
+drift_ablation_plot.png
+drift_stripped_r2_bar.png
+energy_model_results.json
+future_work_timeline.png
+near_far_boxplot.png
+streaming_pipeline_diagram.png
+summary_radar_chart.png
+
+# Dataset generator scripts
+generate_92k_dataset.py
+generate_primary_dataset.py
+generate_sensor_data.py
+generate_slides_visuals.py

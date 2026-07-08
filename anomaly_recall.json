@@ -1,0 +1,52 @@
+{
+  "n_total": 2027520,
+  "n_hard_inject": 200,
+  "n_soft_inject": 2000,
+  "n_detected": 69099,
+  "fpr_clean": 0.03362,
+  "confusion_matrix": [
+    [
+      1957228,
+      68092
+    ],
+    [
+      1193,
+      1007
+    ]
+  ],
+  "by_group": [
+    {
+      "group": "HARD",
+      "n_injected": 200,
+      "tp": 130,
+      "fn": 70,
+      "fp": 68969,
+      "tn": 1958351,
+      "recall": 0.65,
+      "precision": 0.001881,
+      "f1": 0.003752
+    },
+    {
+      "group": "SOFT",
+      "n_injected": 2000,
+      "tp": 877,
+      "fn": 1123,
+      "fp": 68222,
+      "tn": 1957298,
+      "recall": 0.4385,
+      "precision": 0.012692,
+      "f1": 0.02467
+    },
+    {
+      "group": "COMBINED",
+      "n_injected": 2200,
+      "tp": 1007,
+      "fn": 1193,
+      "fp": 68092,
+      "tn": 1957228,
+      "recall": 0.457727,
+      "precision": 0.014573,
+      "f1": 0.028247
+    }
+  ]
+}

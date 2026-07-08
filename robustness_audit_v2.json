@@ -1,0 +1,21 @@
+{
+  "threshold": 1000,
+  "total_clean": 1933228,
+  "group_near": {
+    "n": 186372,
+    "pct": 9.6,
+    "r2_static": -0.09494,
+    "rmse": 3.7275,
+    "mae": 2.0195
+  },
+  "group_far": {
+    "n": 1746856,
+    "pct": 90.4,
+    "r2_static": 0.156966,
+    "rmse": 3.4344,
+    "mae": 1.7973
+  },
+  "delta_r2_static": -0.251906,
+  "n_near_blocks": 19,
+  "n_far_blocks": 175
+}
