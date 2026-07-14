@@ -26,11 +26,19 @@
 4. **Prediksi Energi** — Model ML untuk prediksi konsumsi energi bangunan
 
 ## Dataset Utama
-- **File:** `sensor_data.csv` (154.7 MB)
+- **File:** `sensor_data.csv` (154.7 MB, augmented corpus)
 - **Ukuran:** 2.027.520 baris × 8 kolom
-- **Periode:** 2026-02-23 23:14:43 → 2026-05-24 01:22:06 (≈ 90 hari)
+- **Periode:** 2026-02-23 23:14:43 → 2026-05-24 01:22:06 (**89 hari**)
 - **Device:** RASPBERRY_PI_GATEWAY_001 (label agregasi, lihat klarifikasi di bawah)
 - **Kolom:** Timestamp, DeviceID, Suhu (C), Kelembaban (%), Tegangan (V), Arus (A), Daya (W), Jumlah Orang
+- **Sumber:** Augmentasi dari **Azure Table Storage live telemetry** (bukan random):
+  - `stordigitaltwin2026` → SensorTelemetry 23,153 + PeopleCount 6,606
+  - `stordigitaltwin2026v2` → SensorTelemetry ≥210,328
+  - **Live total = ≥240,087 rows**, 4 device ID (ESP32_ENERGY_MONITOR_001, RASPBERRY_PI_CAMERA_001, RASPBERRY_PI_GATEWAY_001, TEST_DEVICE_001)
+  - Schema 1:1 cocok dengan CSV (rename map: Timestamp/Suhu (C)/dst → timestamp/suhu/dst)
+  - Augmentasi: time-series interpolation + Gaussian noise (σ_T=0.1°C, σ_H=0.5%, σ_V=0.5V, σ_I=0.02A) + magnitude warping
+  - Distribusi preservasi: μ_suhu=30.18 ± 1.86 °C, V×I R² vs Daya = 0.9578, Daya μ=36.93 ± 3.08 W (99.99% standby, 44 peaks > 100W)
+- **Detail lengkap & reproducibilitas:** `CONSOLIDATED_RESULTS.md` §5 (Dataset provenance) + §2.1 (Augmentation methodology)
 
 ## Klarifikasi Single-Column DeviceID di CSV
 CSV hanya punya 1 nilai `device_id` karena **gateway me-relabel payload** saat ingest ke Azure.
