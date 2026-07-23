@@ -322,6 +322,16 @@ anomaly_indices.pkl
 streaming_results_z25.pkl
 streaming_metrics_v2_final.pkl
 
+# Pre-jitter backup of streaming_* (rollback reference, not for paper)
+streaming_*_v2.pkl.bak.pre_jitter
+
+# Local run logs (reproducibility lives in commit messages + run_all.py)
+run_with_jitter.log
+run_visualizations.log
+pre_rerun_stdout.log
+pre_rerun_stderr.log
+test_load.log
+
 # Slide/presentation PNGs
 anomaly_rate_pie.png
 architecture_comparison_bar.png
@@ -339,3 +349,9 @@ generate_92k_dataset.py
 generate_primary_dataset.py
 generate_sensor_data.py
 generate_slides_visuals.py
+
+# Archive (2026-07-23 hard reset) — 565 MB preserved locally, kept out of git
+arsip/
+
+# Local sensor data (already in repo via Git LFS per .gitattributes)
+Data/*.csv
