@@ -1,0 +1,25 @@
+# Digital_Twin local .gitignore
+# Safety net for the Digital_Twin tree root.
+# Most project-specific excludes (node_modules, dist, .env, .DS_Store)
+# already live in dashboard_digitaltwin/view_virtual/.gitignore.
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+
+# Environment / secrets (also covered by view_virtual/.gitignore but
+# we re-list at root for clarity)
+.env
+.env.local
+
+# Logs
+*.log
+
+# Python caches
+__pycache__/
+*.pyc
+*.pyo
+
+# Live sensor data (regenerated each run)
+public/data/sensor_history.json
+public/data/sensor_stats.json

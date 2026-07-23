@@ -2,7 +2,7 @@
 
 Sub-modul ini adalah salinan ramping dari proyek **TwinSpace / dashboard_digitaltwin** yang sudah ada di `~/Desktop/dashboard_digitaltwin/`. Disalin ke sini untuk mendukung validasi arsitektur pada jurnal:
 
-> **Strategi Arsitektur Edge-Cloud Berbasis Fusi Data Multimodal pada Ekosistem Digital Twin Web-3D untuk Prediksi Energi Bangunan Cerdas**
+> **Arsitektur Edge-Cloud untuk Estimasi Daya Near Real-Time Bangunan Cerdas Terintegrasi Digital Twin Web-3D**
 
 ---
 
