@@ -72,6 +72,7 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import * as BABYLON from '@babylonjs/core'
 import '@babylonjs/loaders/glTF'
+import '@babylonjs/loaders/glTF'
 
 const props = defineProps({
   sensorData: {

@@ -30,19 +30,21 @@
               <th>Kelembaban (%)</th>
               <th>Tegangan (V)</th>
               <th>Arus (A)</th>
-              <th>Daya (W)</th>
+              <th>Daya Observasi</th>
+              <th>Estimasi Daya</th>
               <th>Jumlah Orang</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>{{ currentTime }}</td>
+              <td>{{ telemetryTime }}</td>
               <td>{{ formatValue(sensorData.temperature) }}</td>
               <td>{{ formatValue(sensorData.humidity) }}</td>
               <td>{{ formatValue(sensorData.voltage) }}</td>
               <td>{{ formatValue(sensorData.current) }}</td>
-              <td>{{ formatValue(sensorData.power) }}</td>
+              <td>{{ formatValue(sensorData.observedPower) }}</td>
+              <td>{{ formatValue(sensorData.estimatedPower) }}</td>
               <td>{{ peopleCount }}</td>
               <td>
                 <span class="status-badge" :class="getOverallStatus()">
@@ -60,12 +62,12 @@
           <div class="summary-value">{{ formatValue(sensorData.temperature) }}°C</div>
         </div>
         <div class="summary-item">
-          <div class="summary-label">Total Konsumsi</div>
+          <div class="summary-label">Integral Estimasi Daya</div>
           <div class="summary-value">{{ formatEnergy(totalEnergy) }}</div>
         </div>
         <div class="summary-item">
-          <div class="summary-label">Kapasitas Ruangan</div>
-          <div class="summary-value">{{ peopleCount }} / 20</div>
+          <div class="summary-label">Sumber / Model</div>
+          <div class="summary-value">{{ sensorData.sourceType }} / {{ sensorData.modelName }}</div>
         </div>
       </div>
     </template>
@@ -94,20 +96,12 @@ const props = defineProps({
 const currentTime = ref(new Date().toLocaleString('id-ID'))
 let timeInterval = null
 
-const hasData = computed(() => {
-  const temp = parseFloat(props.sensorData.temperature) || 0
-  const humidity = parseFloat(props.sensorData.humidity) || 0
-  const voltage = parseFloat(props.sensorData.voltage) || 0
-  const current = parseFloat(props.sensorData.current) || 0
-  
-  // Check if any sensor has valid data
-  return (
-    (temp > -50 && temp < 100) ||
-    (humidity >= 0 && humidity <= 100) ||
-    voltage > 0 ||
-    current > 0 ||
-    props.peopleCount > 0
-  )
+const hasData = computed(() => props.sensorData.sourceType && props.sensorData.sourceType !== 'unavailable')
+
+const telemetryTime = computed(() => {
+  if (!props.sensorData.timestamp) return currentTime.value
+  const parsed = new Date(props.sensorData.timestamp)
+  return Number.isNaN(parsed.getTime()) ? props.sensorData.timestamp : parsed.toLocaleString('id-ID')
 })
 
 const connectionStatus = computed(() => {
@@ -162,8 +156,8 @@ const getOverallStatus = () => {
   const hasValidData = 
     (temp > -50 && temp < 100) ||
     (humidity >= 0 && humidity <= 100) ||
-    voltageStatus === 'terhubung' ||
-    currentStatus === 'terhubung'
+    voltageStatus === 'normal' ||
+    currentStatus === 'normal'
   
   if (!hasValidData) {
     return 'status-offline'
@@ -171,10 +165,10 @@ const getOverallStatus = () => {
   
   if (
     temp > 30 || temp < 15 ||
-    (voltageStatus === 'terhubung' && (voltage > 250 || voltage < 180)) ||
-    (currentStatus === 'terhubung' && current > 80) ||
-    voltageStatus !== 'terhubung' ||
-    currentStatus !== 'terhubung'
+    (voltageStatus === 'normal' && (voltage > 250 || voltage < 180)) ||
+    (currentStatus === 'normal' && current > 80) ||
+    voltageStatus !== 'normal' ||
+    currentStatus !== 'normal'
   ) {
     return 'status-warning'
   }
@@ -432,7 +426,6 @@ td {
   }
 }
 </style>
-
 
 
 

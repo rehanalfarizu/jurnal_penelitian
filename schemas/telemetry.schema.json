@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/schemas/telemetry.schema.json",
+  "title": "Edge-cloud power-estimation telemetry",
+  "type": "object",
+  "required": [
+    "timestamp_utc",
+    "device_id",
+    "source_type",
+    "observed",
+    "estimate",
+    "processing"
+  ],
+  "properties": {
+    "timestamp_utc": { "type": "string", "format": "date-time" },
+    "device_id": { "type": "string", "minLength": 1 },
+    "scenario_id": { "type": ["string", "null"] },
+    "run_id": { "type": ["string", "null"] },
+    "source_type": {
+      "enum": [
+        "real_trace_replay",
+        "synthetic_calibrated",
+        "legacy_augmented_replay",
+        "live_sensor"
+      ]
+    },
+    "observed": {
+      "type": "object",
+      "required": [
+        "temperature_c",
+        "humidity_pct",
+        "voltage_v",
+        "current_a",
+        "power_w",
+        "people_count"
+      ],
+      "properties": {
+        "temperature_c": { "type": ["number", "null"] },
+        "humidity_pct": { "type": ["number", "null"] },
+        "voltage_v": { "type": ["number", "null"] },
+        "current_a": { "type": ["number", "null"] },
+        "power_w": { "type": ["number", "null"] },
+        "people_count": { "type": ["integer", "null"], "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "estimate": {
+      "type": "object",
+      "required": ["power_w", "model_name", "model_scope"],
+      "properties": {
+        "power_w": { "type": ["number", "null"], "minimum": 0 },
+        "model_name": { "type": "string" },
+        "model_scope": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "processing": {
+      "type": "object",
+      "required": ["tier", "compute_latency_ms"],
+      "properties": {
+        "tier": { "enum": ["edge", "cloud", "replay"] },
+        "compute_latency_ms": { "type": "number", "minimum": 0 },
+        "network_latency_ms": { "type": ["number", "null"], "minimum": 0 },
+        "end_to_end_latency_ms": { "type": ["number", "null"], "minimum": 0 }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

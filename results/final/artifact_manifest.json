@@ -1,0 +1,25 @@
+{
+  "run_type": "final_configured_experiment",
+  "files": {
+    "configs/experiment.json": {
+      "sha256": "a60aa58ffd7c9ce82c7f6011c0d871ad2ee16114e05b7834c97268a575c5cd39",
+      "bytes": 2890
+    },
+    "Data/sensor_data_export_2026-05-17_to_2026-05-23.xlsx": {
+      "sha256": "dd8b5028eda7bca0265da4ada881e1ed1f1ec84afb6b6f0a33cd82f9984f4d29",
+      "bytes": 3829685
+    },
+    "Data/sensor_data.csv": {
+      "sha256": "ca7831a188a191edbf82a673fac90dbb875b5095986ed07699c02530f2a02a0e",
+      "bytes": 162251693
+    },
+    "outputs/synthetic_telemetry.csv": {
+      "sha256": "165a09e996df8ef6a04d13205d05f796826ffa7e5957257b64bdfbdecd1652da",
+      "bytes": 145007839
+    },
+    "outputs/power_estimator.joblib": {
+      "sha256": "58565112d27b710f39cea0531884a2dbcc90b0106991498a687e3b628f37559d",
+      "bytes": 2920
+    }
+  }
+}

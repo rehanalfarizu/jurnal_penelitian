@@ -9,7 +9,7 @@
             </div>
             <div class="logo-copy">
               <h1 class="logo-text">Twin Space Dashboard</h1>
-              <p class="logo-subtitle">Secure digital twin workspace</p>
+              <p class="logo-subtitle">Research telemetry &amp; power estimation</p>
             </div>
           </div>
         </div>
@@ -23,7 +23,7 @@
 
             <div class="status-badge" :class="mqttConnected ? 'connected' : 'disconnected'">
               <span class="status-dot"></span>
-              <span class="status-text">{{ mqttConnected ? 'Terhubung' : 'Mode DEMO' }}</span>
+              <span class="status-text">{{ mqttConnected ? 'Replay/API terhubung' : 'API tidak tersedia' }}</span>
             </div>
 
             <div class="timestamp">
@@ -53,9 +53,15 @@
           />
         </div>
 
-        <div class="card" style="margin-bottom: 20px;">
-          <h2>📹 Live Camera Stream - People Counter</h2>
-          <CameraStream @people-count-update="handlePeopleCountUpdate" />
+        <div class="card provenance-card" style="margin-bottom: 20px;">
+          <h2>🧪 Provenance Eksperimen</h2>
+          <div class="provenance-grid">
+            <div><span>Sumber</span><strong>{{ sensorData.sourceType }}</strong></div>
+            <div><span>Skenario</span><strong>{{ sensorData.scenarioId || 'tidak berlaku' }}</strong></div>
+            <div><span>Run</span><strong>{{ sensorData.runId || 'tidak berlaku' }}</strong></div>
+            <div><span>Estimator</span><strong>{{ sensorData.modelName }}</strong></div>
+          </div>
+          <p class="scope-note">{{ sensorData.modelScope }}</p>
         </div>
 
         <div class="grid grid-3" style="margin-bottom: 20px;">
@@ -65,7 +71,7 @@
           </div>
 
           <div class="card">
-            <h2>⚡ Konsumsi Listrik (24 Jam)</h2>
+            <h2>⚡ Estimasi Daya (Near Real-Time)</h2>
             <ElectricityChart :data="electricityData" :is-dark-mode="isDarkMode" />
           </div>
 
@@ -84,23 +90,6 @@
           />
         </div>
 
-        <ACRecommendation
-          :sensor-data="sensorData"
-          :people-count="peopleCount"
-          :is-dark-mode="isDarkMode"
-        />
-
-        <EnergyManagement
-          :is-dark-mode="isDarkMode"
-          :current-power="sensorData.power"
-          :is-admin="false"
-        />
-
-        <HistoricalAnalytics
-          :is-dark-mode="isDarkMode"
-          :current-people-count="peopleCount"
-          :is-admin="false"
-        />
       </div>
     </main>
   </div>
@@ -108,17 +97,12 @@
 
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import ACRecommendation from './ACRecommendation.vue'
-import CameraStream from './CameraStream.vue'
 import DataTable from './DataTable.vue'
 import DigitalTwin3D from './DigitalTwin3D_Babylon.vue'
 import ElectricityChart from './ElectricityChart.vue'
 
 import PeopleChart from './PeopleChart.vue'
 import TemperatureChart from './TemperatureChart.vue'
-import EnergyManagement from './EnergyManagement.vue'
-import HistoricalAnalytics from './HistoricalAnalytics.vue'
-import { useHistoricalData } from '../composables/useHistoricalData'
 import { useMQTT } from '../composables/useMQTT'
 
 const props = defineProps({
@@ -134,11 +118,8 @@ const {
   mqttConnected,
   sensorData,
   connectMQTT,
-  disconnectMQTT,
-  savePeopleCount
+  disconnectMQTT
 } = useMQTT()
-
-const { loadHistoricalData, addDataPoint: addHistoricalDataPoint } = useHistoricalData()
 
 const temperatureData = ref({ labels: [], values: [] })
 const electricityData = ref({ labels: [], values: [] })
@@ -147,10 +128,8 @@ const peopleCount = ref(0)
 const totalEnergyWh = ref(0)
 const currentTime = ref(new Date())
 
-const SAVE_INTERVAL = 30000
 const MAX_POINTS = 60
 
-let lastSaveTimestamp = 0
 let timeInterval = null
 let lastPowerTimestamp = Date.now()
 
@@ -188,13 +167,6 @@ const addChartDataPoint = (targetRef, value) => {
   targetRef.value = { labels, values }
 }
 
-const handlePeopleCountUpdate = async count => {
-  peopleCount.value = count
-  sensorData.value.peopleCount = count
-  addChartDataPoint(peopleData, count)
-  await savePeopleCount(count, 'Ruang Utama')
-}
-
 watch(
   sensorData,
   newData => {
@@ -220,18 +192,12 @@ watch(
       addChartDataPoint(peopleData, newData.peopleCount)
     }
 
-    const now = Date.now()
-    if (now - lastSaveTimestamp >= SAVE_INTERVAL) {
-      addHistoricalDataPoint(newData)
-      lastSaveTimestamp = now
-    }
   },
   { deep: true }
 )
 
 onMounted(() => {
   connectMQTT()
-  loadHistoricalData()
 
   timeInterval = setInterval(() => {
     currentTime.value = new Date()
@@ -539,6 +505,35 @@ onUnmounted(() => {
   animation: expandLine 0.5s ease-out;
 }
 
+.provenance-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.provenance-grid div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px;
+  border: 1px solid var(--border-dark);
+  border-radius: 12px;
+}
+
+.provenance-grid span,
+.scope-note {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.provenance-grid strong {
+  overflow-wrap: anywhere;
+}
+
+.scope-note {
+  margin: 14px 0 0;
+}
+
 @keyframes expandLine {
   from {
     width: 0;
@@ -560,6 +555,10 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
+  .provenance-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .header-container {
     gap: 16px;
     padding: 16px 20px;

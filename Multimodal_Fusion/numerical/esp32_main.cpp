@@ -1,1 +1,0 @@
-../../Digital_Twin/dashboard_digitaltwin/sensor_iot/esp32_main.cpp

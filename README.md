@@ -1,105 +1,118 @@
-# Jurnal Penelitian
+# Edge-Cloud Power Estimation for a Web-3D Digital Twin
 
-## Strategi Arsitektur Edge-Cloud Berbasis Fusi Data Multimodal pada Ekosistem Digital Twin Web-3D untuk Prediksi Energi Bangunan Cerdas
+Repositori penelitian untuk:
 
-> **STATUS: Final results (2026-06-30)** — Lihat ringkasan hasil di bawah.
+> **Arsitektur Edge-Cloud untuk Estimasi Daya Near Real-Time Bangunan Cerdas
+> Terintegrasi Digital Twin Web-3D: Evaluasi Berbasis Data Sintetis
+> Terkalibrasi**
 
-### Files
+## Status metodologi
 
-| File | Deskripsi |
-|---|---|
-| `edge_cloud_streaming.ipynb` | **Streaming Edge-Cloud** — Validasi pipeline near-real-time Ridge + anomaly detection |
-| `energy_prediction_models.ipynb` | **Akurasi Prediksi Energi** — Feature engineering + Ridge/RF pada 2M records (FIXED: no V×I circularity, no target leakage) |
-| `streaming_final.py` | Script sumber untuk generate `streaming_metrics_v2.pkl` + `streaming_results_v2.pkl` |
-| `streaming_metrics_v2.pkl` | Output metrics streaming (latency, throughput, drift) |
-| `streaming_results_v2.pkl` | Output predictions streaming (predictions per chunk, R², MAPE) |
-| `streaming_latency_analysis.png` | Visualisasi latensi edge vs cloud (output notebook) |
-| `streaming_routing_analysis.png` | Visualisasi routing normal vs anomaly (output notebook) |
-| `streaming_prediction_accuracy.png` | Visualisasi akurasi prediksi streaming (output notebook) |
-| `energy_model_results_fixed.json` | Output metrics energy model (R², RMSE, MAE per model) |
-| `sensor_data.csv` | Dataset sensor IoT (154.7 MB, 2.027.520 baris, 8 kolom) — **Git LFS** |
-| `dashboard_digitaltwin/` | Sub-modul TwinSpace (Vue.js + Babylon.js + ESP32 + YOLO + Azure) |
-| `CONSOLIDATED_RESULTS.md` | Tabel angka final paper (satu sumber kebenaran) |
+Pipeline baru menggunakan **evaluasi berbasis simulasi**, dikalibrasi dari satu
+trace sensor nyata berisi 92.160 baris. Hasilnya tidak boleh ditulis sebagai
+validasi banyak bangunan, pengukuran Raspberry Pi baru, atau pengukuran public
+cloud.
 
-### Arsitektur yang Divalidasi
+Data `Data/sensor_data.csv` berisi 2.027.520 baris augmentasi lama. File itu
+merupakan 22 replay dari trace asli dengan beberapa transformasi, bukan 2 juta
+observasi independen. Pipeline hanya menggunakannya sebagai workload benchmark
+dan replay arsitektur; data tersebut tidak masuk training, validation, atau
+test akurasi model.
 
+## Struktur utama
+
+- `configs/experiment.json` — skenario, seed, split, dan profil emulasi.
+- `src/data/` — audit trace, generator sintetis, dan validasi diagnostik.
+- `src/models/` — baseline serta evaluasi estimator.
+- `src/benchmark/` — pengukuran komputasi lokal dan emulasi jaringan berlabel.
+- `src/replay/` — API replay untuk integrasi Web-3D.
+- `schemas/telemetry.schema.json` — kontrak telemetry.
+- `Digital_Twin/` — firmware legacy, fungsi telemetry, dan dashboard Web-3D.
+- `docs/METHODOLOGY.md` — metode dan ancaman validitas.
+- `docs/RESEARCH_FLOW.md` — alur penelitian baru.
+- `notebooks/01_evaluasi_final.ipynb` — ringkasan hasil final interaktif yang
+  sudah dieksekusi.
+- `results/final/` — laporan, visual, konfigurasi, metrik, dan manifest hash
+  eksperimen final terkonfigurasi.
+- `AUDIT_RESULTS.md` dan `LEGACY_PROJECT_AUDIT.md` — jejak keputusan reset.
+
+## Menjalankan eksperimen
+
+Siapkan Python 3.11+ dan dependensi:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
 ```
-[ESP32 sensors + RPi Camera] --> [RPi Gateway: aggregate] --> [Edge Node: preprocess + fusion + anomaly + prediction]
-                                                                                  |
-                                                            +---------------------+---------------------+
-                                                            |                                           |
-                                                       [Normal (96.8%)]                          [Anomaly (3.2%)]
-                                                            |                                           |
-                                                       [Realtime <2ms]                          [Cloud: heavy + DT sync]
-                                                                                              ~200ms (incl network)
+
+Smoke test cepat:
+
+```bash
+python run_experiment.py --rows-per-run 600
+python -m unittest discover -s tests
 ```
 
-- **Multi-source**: ESP32 (DHT11/ZMPT101B/SCT013) + RPi Camera (YOLO) + RPi Gateway metadata
-- **Edge**: 1.49 ms/record (median), SLA <2ms, cukup untuk Digital Twin Web-3D
-- **Cloud**: 196 ms (incl network + heavy processing), hanya untuk anomali
-- **Anomaly rate**: 3.24% dari 2.027.520 records
+Eksperimen sesuai konfigurasi:
 
-### Status Modul Digital Twin: Reference Architecture / Prototype
+```bash
+python run_experiment.py
+python -m src.reporting.generate_figures --figures results/final/figures
+python -m src.reporting.generate_final_report
+```
 
-Sesuai keputusan desain D4, modul `dashboard_digitaltwin/` diposisikan sebagai **reference architecture / prototype**, bukan Digital Twin fungsional yang tervalidasi. Bukti:
+Artefak dihasilkan ke `outputs/` dan tidak dilacak Git. Konfigurasi default
+membuat lima skenario × empat run × 24 jam. Dua skenario digunakan untuk
+training, satu untuk validation, dan dua skenario yang tidak terlihat selama
+training digunakan sebagai test. Ringkasan yang siap ditinjau berada di
+`results/final/RESULTS.md`.
 
-- **Yang ada:** Vue 3 + Babylon.js 3D rendering (glTF floor plan + sensor icon overlay), AC 3D primitive dengan particle effect, Cesium 3D map viewer, 7 composables (Azure telemetry polling, dummy data, MQTT), ESP32 firmware (DHT11 + ZMPT101B + SCT013), RPi YOLO people detection, Azure Functions untuk IoT data pipeline.
-- **Yang TIDAK ada:**
-  1. Tidak ada physics-based thermal/electrical simulation (no thermal solver, no HVAC model, no occupancy-driven energy model).
-  2. Tidak ada per-room/zone energy breakdown — hanya single aggregate kW prediction.
-  3. Tidak ada evaluasi prediksi-vs-terukur per ruangan (no error metric per zone).
-  4. Fitur model yang di-deploy (5 fitur) tidak match dengan 19-fitur notebook energy_prediction_models.
-  5. Tidak ada integrasi antara pipeline streaming 2M-record di notebook dengan dashboard ML models (3 model .pkl yang berbeda dilatih via script terpisah).
+Untuk membaca hasil secara interaktif:
 
-**Verdict:** Untuk paper, modul ini layak disebut "implemented reference architecture" dengan cakupan visualisasi 3D + sensor overlay + arsitektur IoT penuh. **Jangan diklaim** sebagai Digital Twin fungsional/tervalidasi kecuali physics-based simulation + per-room evaluation ditambahkan (lihat `AUDIT_REPORT.md` Bagian 4 untuk detail).
+```bash
+jupyter lab notebooks/01_evaluasi_final.ipynb
+```
 
----
+Notebook menggunakan kernel `Python 3.11` dan membaca artefak
+`results/final/`, sehingga tidak melatih ulang 493.700 baris ketika dibuka.
 
-## Keputusan Desain (6 final)
+## Menjalankan replay dan Web-3D
 
-1. **Model = Ridge 19-fitur end-to-end**. Tidak ada SGD 4-fitur. Notebook `edge_cloud_streaming.ipynb` adalah satu-satunya canonical model untuk streaming, `energy_prediction_models.ipynb` untuk akurasi prediksi energi.
-2. **Streaming threshold default = z=2.5** — validasi di `edge_cloud_streaming.ipynb`.
-3. **Robustness = STATIC R² per group**, threshold = 1000 (matching `deque(maxlen=1000)`).
-4. **Anomali = pre-injected dalam dataset**. Ground truth terdokumentasi.
-5. **Counterfactual arsitektur = bootstrap dari observed edge/cloud latency & energy distribution**.
-6. **Latensi "near-real-time" = simulasi**. `cloud_latency_ms` adalah parameter yang di-inject untuk eksperimen routing.
+Setelah pipeline menghasilkan model dan CSV:
 
----
+```bash
+python -m src.replay.replay_server
+```
 
-## HASIL FINAL — 2 Bagian Terpisah
+Perintah di atas mereplay data sintetis untuk membaca hasil estimasi. Untuk
+demonstrasi workload augmented pada kontrak Web-3D:
 
-### A. Akurasi Prediksi Energi (energy_prediction_models.ipynb)
-> Klaim utama judul: "Prediksi Energi Bangunan Cerdas"
+```bash
+python -m src.replay.replay_server \
+  --input Data/sensor_data.csv \
+  --input-format legacy_augmented
+```
 
-| Model | R²_train | R²_test | RMSE (W) | MAE (W) | Train Time |
-|---|---|---|---|---|---|
-| Ridge (α=0.01) | 0.9990 | **0.9590** | ~0.617 | ~0.527 | ~0.3s |
-| RandomForest (depth=∞) | 0.9995+ | **0.9933** | ~0.250 | ~0.177 | ~256s |
+Pada terminal lain:
 
-**Metodologi:** Prediksi daya(t) dari fitur eksogen di waktu t (tanpa V×I circularity, tanpa target leakage via rolling means). Fitur: suhu, kelembaban, arus tegangan, jam, sin/cos hari, rolling window (30/180 menit).
+```bash
+cd Digital_Twin/dashboard_digitaltwin/view_virtual
+npm ci
+npm run dev
+```
 
-**Data:** `sensor_data.csv` — 2.027.520 records, 8 sensor columns, 19 fitur engineer.
+Dashboard menggunakan `http://127.0.0.1:8000/api` secara default. Endpoint lain
+dapat diatur melalui `VITE_TELEMETRY_API_URL`. Jangan commit credential atau
+function key.
 
-### B. Streaming Edge-Cloud (Ketahanan Arsitektur)
-> Validasi: adaptive retraining + drift compensation — lihat `CONSOLIDATED_RESULTS.md` § 1–2
+## Aturan pelaporan hasil
 
-| Metrik | Nilai |
-|---|---|
-| Computational throughput | 3,335 rec/s (benchmarked, see CONSOLIDATED_RESULTS § 1) |
-| Edge latency (wall-clock) | 1.81 ms/record (EDGE_ONLY), 12.72 ms (EDGE_PREFERRED w/ 3.4% cloud) |
-| Cloud latency | 275 ms (hardcoded assumption — SIMULATED, not measured) |
-| Anomaly rate | 3.41% (z=2.5) — routed to cloud |
-| Batch energy model (RF) | R²=0.9933 (see §A above) |
-
-**Drift ablation** (CONSOLIDATED_RESULTS.md § 2): accumulated drift explains **93.5%** of the streaming-vs-batch R² gap. After drift stripping, RF reaches R²=0.997 (virtually identical to batch). The remaining gap is Ridge linearity (< 2%).
-
-### Perbandingan Dua Hasil
-
-| Aspek | Prediksi Energi (A) | Streaming Edge-Cloud (B) |
-|---|---|---|
-| Question | "Seberapa akurat memprediksi daya?" | "Seberapa robust pipeline edge-cloud terhadap drift?" |
-| Method | Batch train-test split (80/20) | Online streaming + periodic retrain + drift ablation |
-| Best R² | **0.9933** (RF batch) | **0.9128** (Ridge streaming, CONSOLIDATED §2) |
-| Insight kunci | 19 fitur anti-circularity = akurasi tinggi | Drift explains 93.5% of streaming-vs-batch gap |
-| Validitas ilmiah | Tinggi (clean feature engineering, no leakage) | Tinggi — drift ablation closed, robustness audited |
-
+- Nyatakan daya firmware sebagai `V × I`; data nyata tidak memiliki faktor daya.
+- Nyatakan data hasil generator sebagai `synthetic_calibrated`.
+- Laporkan metrik keseluruhan dan per skenario/run.
+- Bedakan latensi komputasi yang diukur dari latensi jaringan yang diemulasi.
+- Gunakan CSV augmentasi lama hanya sebagai workload replay arsitektur.
+- Jangan menggunakan CSV augmentasi lama sebagai train, validation, atau test
+  akurasi model.
+- Pertahankan `scenario_id`, `run_id`, `seed`, dan `source_type` pada turunan
+  data.

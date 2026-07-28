@@ -1,94 +1,122 @@
-# Audit Hasil — Visual vs Angka (Ground Truth vs Figure vs Docs)
+# Audit dan Reset Penelitian
 
-**Generated**: 2026-07-23
-**Source**: verifikasi langsung dari `arsip/2026-07-23/streaming_results_v2.pkl` + `streaming_metrics_v2.pkl` + `energy_model_results_fixed.json` + `figures/01-08`
+Tanggal audit: 28 Juli 2026
 
-## TL;DR
+## Kesimpulan
 
-Ada **3 inkonsistensi angka** yang harus diputuskan sebelum jadi paper:
+Versi lama tidak layak dijadikan baseline hasil penelitian. Penyebab utamanya
+adalah pencampuran simulasi dengan pengukuran nyata, target model yang tidak
+sesuai judul, provenance dataset yang tidak lengkap, dan dokumentasi yang
+bertentangan dengan kode.
 
-1. ❌ **Throughput klaim 15,729 rec/s** vs ground truth **10,448.66 rec/s** (atau 769.23 rec/s kalau dihitung dari total edge compute time). CLAUDE.md + CONSOLIDATED_RESULTS + figure 01 semuanya bilang 15,729. File pkl bilang beda.
-2. ⚠️ **Edge latency = 1.3 ms konstan** untuk SEMUA 2,027,520 records (no variance). Ini bukan realistic measurement; lebih seperti simulated constant.
-3. ⚠️ **Cloud latency P50 klaim 321.3 ms** vs aktual 320.0000 ms flat (semua routed records = 320 ms, no variance). Dan kalau dihitung dari SEMUA records (99% zero), P50 = 0 ms.
+## Temuan kritis
 
-## Detail Audit
+### 1. Latency dan throughput bukan hasil pengukuran end-to-end
 
-### A. Angka-angka yang KONSISTEN ✅
+`streaming_final.py` lama menetapkan latency edge dari konstanta total 1,3 ms
+dan latency cloud dari konstanta komponen jaringan/komputasi/sinkronisasi.
+Distribusi kemudian dibuat dengan noise Gaussian dan clipping. Throughput
+"edge node" dihitung balik dari jumlah latency sintetis tersebut.
 
-| Klaim | Source | Match? |
-|---|---|---|
-| Total records: 2,027,520 | `streaming_results_v2.pkl` (len) | ✅ |
-| Streaming R² = 0.9464 | pkl: 0.946447, re-compute: 0.946447 | ✅ |
-| Test R² = 0.9580 | pkl: 0.958022 | ✅ |
-| Test MAPE = 1.45% | pkl: 1.4459% | ✅ |
-| Anomaly count = 17,931 | pkl: 17931 | ✅ |
-| Edge efficiency = 99.12% | pkl: 99.1156% | ✅ |
-| Ridge R² (batch) = 0.9590 | `energy_model_results_fixed.json`: 0.9590 | ✅ |
-| RF R² (batch) = 0.9933 | json: 0.9933 | ✅ |
-| Ridge MAPE = 1.43% | json: 1.4350% | ✅ |
-| RF MAPE = 0.48% | json: 0.4820% | ✅ |
-| Duration = 89 days | ts diff: 89.09 days | ✅ |
-| TwinSpace R² = 0.9687 | `model_config.json`: 0.9687 | ✅ |
-| TwinSpace AC R² = 0.8629 | `model_config.json`: 0.8629 | ✅ |
+Naskah lama, sebaliknya, menyebut angka itu sebagai pengukuran Raspberry Pi
+dan sistem Azure nyata. Klaim 1,3 ms, sekitar 321 ms, 246×, 15.729 record/s,
+dan 52.400× headroom karena itu tidak boleh digunakan.
 
-### B. Inkonsistensi ❌
+### 2. Evaluasi streaming tidak benar-benar memprediksi setiap record
 
-#### B.1. Throughput — **ANGKA KLAIM TIDAK MATCH DATA**
+Prediksi Ridge dijalankan satu kali setiap 50 record. Hanya sekitar 2% record
+yang mempunyai prediksi, tetapi hasilnya dipakai untuk mendukung klaim sistem
+streaming keseluruhan.
 
-| Sumber | Nilai | Cara hitung |
-|---|---|---|
-| Figure 01 judul | **15,729 rec/s** | hardcoded label |
-| CONSOLIDATED_RESULTS §1 | **15,729 rec/s** | klaim dari streaming_metrics_v2.pkl |
-| CLAUDE.md | **15,729 rec/s** | konsisten dgn doc |
-| `streaming_metrics_v2.pkl → throughput` | **10,448.66 rec/s** | ← ground truth pkl |
-| Re-compute (records/total_edge_time) | **769.23 rec/s** | ← direct calc |
-| Sensor cadence (records/wall-clock dari ts) | **0.26 rec/s** | ← from data timestamps |
+### 3. Model rekomendasi AC tidak sesuai target penelitian
 
-**Diagnosis**: Ada **3 angka throughput yang berbeda** di 3 tempat. Angka pkl (10,449) ≠ angka klaim dokumen (15,729). Plus kalau dihitung dari data langsung = 769 rec/s. Perlu penjelasan: throughput yang dimaksud itu yang mana?
+Target rekomendasi suhu AC dibuat oleh fungsi aturan manual, lalu model
+Gradient Boosting dilatih untuk meniru aturan tersebut dengan random split.
+Itu bukan estimasi daya near real-time dan bukan ground truth hasil observasi.
+Dataset yang dirujuk script training juga tidak tersedia pada path tersebut.
 
-- Kalau "throughput = records / total_compute_time" → harusnya 769, bukan 15,729 atau 10,449.
-- Kalau "throughput = records / (wall-clock end-to-end pipeline time)" → itu juga akan kecil karena loadnya santai.
+### 4. Scope penelitian melebar tanpa dukungan data
 
-Cara dapat 10,449 atau 15,729 tidak jelas dari `streaming_final.py` (script tidak ada di repo). CONSOLIDATED §1 bilang "Wall-clock measurement" tapi mekanismenya tidak reproducible.
+Dokumen lama menambahkan YOLO, multimodal fusion, Transformer, GNN, Kalman
+filter, Informer, anomaly routing, dan kontrol AC. Sebagian besar tidak
+diimplementasikan atau tidak diperlukan oleh judul. Kompleksitas ini menutupi
+pertanyaan penelitian inti.
 
-#### B.2. Edge Latency — **KONSTAN 1.3 ms (no variance)**
+### 5. Dataset augmented bukan observasi independen
 
-```
-Edge latency stats (n=2,027,520):
-  Mean = Median = P5 = P25 = P50 = P75 = P95 = P99 = Max = Min = 1.3000 ms
-```
+`Data/sensor_data.csv` berisi 2.027.520 record dari satu device, rentang
+23 Februari–24 Mei 2026. Audit lokal menemukan:
 
-**Diagnosis**: Setiap record punya edge_latency_ms = 1.3 ms. Tidak ada variance. Ini bukan pengukuran realistic — ini simulated constant. Mungkin `streaming_final.py` hardcode latency = 1.3 ms untuk semua edge records.
+- 2.027.520 timestamp unik dan terurut;
+- 87.890 kombinasi payload sensor unik;
+- sekitar 95,67% record mengulang kombinasi nilai sensor yang pernah muncul;
+- cadence dominan sekitar 3,4–3,6 detik;
+- daya 25,4–484,0 W, dengan mean sekitar 36,93 W;
+- hanya satu `DeviceID`.
 
-**Implikasi paper**: Klaim "Edge P50 = 1.3 ms" benar secara angka, tapi distribusi latency tidak bisa dianalisis (P50=P95=P99=max=min). Figure 02 latency_distribution akan terlihat sangat degenerate (flat histogram).
+Workbook asli kemudian tersedia pada
+`Data/sensor_data_export_2026-05-17_to_2026-05-23.xlsx`: 92.160 baris dari satu
+gateway, dengan waktu aktual sekitar 19–23 Mei 2026. Perbandingan posisi
+menunjukkan CSV 2.027.520 baris sama dengan 22 replay dari 92.160 baris.
+Sebagian nilai nol diimputasi dan jumlah orang diubah, tetapi mayoritas kolom
+sensor tetap identik. Timestamp hasil replay bahkan ditempatkan sebelum waktu
+akuisisi asli.
 
-#### B.3. Cloud Latency — **KONSTAN 320 ms untuk semua routed records**
+Script yang benar-benar mengubah data sekitar 93 ribu menjadi 2.027.520 baris
+tidak ditemukan. Dokumentasi lama hanya menyebut interpolasi deret waktu,
+Gaussian noise, dan magnitude warping. Dataset 2 juta dipertahankan hanya
+sebagai bukti audit legacy. Pipeline baru tidak membacanya untuk training,
+validasi, test, ataupun benchmark.
 
-```
-Cloud latency (only routed_to_cloud=True, n=17,931):
-  Mean = P50 = P95 = P99 = Max = 320.0000 ms (semua sama!)
+### 6. Istilah target bercampur
 
-Cloud latency (all records, n=2,027,520):
-  Mean: 2.83 ms (karena 99% data = 0)
-  P50:  0.0 ms
-  Max:  320.0 ms
-```
+Kode memprediksi daya sesaat dalam watt, sedangkan dokumen berulang kali
+menyebut "energy prediction". Daya (W) dan energi (Wh/kWh) adalah target yang
+berbeda dan harus dipisahkan.
 
-**Diagnosis**: Setiap cloud-routed record dapat 320 ms latency. Klaim figure 01 "Cloud P50 = 321.3 ms" off by 1.3 (mungkin salah baca atau typo).
+### 7. Digital Twin lama belum tervalidasi sebagai twin
 
-Klaim CONSOLIDATED_RESULTS §1 "Cloud latency P50 = 321.3 ms" kemungkinan salah baca file atau file version berbeda.
+Web viewer lama menampilkan model 3D dan telemetry, tetapi juga mempunyai
+dummy fallback, komponen rekomendasi AC, dan beberapa jalur API. Komponen
+tersebut sekarang telah dihapus. Dashboard baru hanya mengonsumsi kontrak
+telemetry dengan provenance eksplisit; ia tetap merupakan lapisan visualisasi,
+bukan bukti akurasi model atau deployment cloud.
 
-### C. Anomali data lainnya
+## Yang dihapus
 
-- **Valid streaming predictions: 40,550 dari 2,027,520 records (2%)**. Sisanya `pred_daya = nan`. Ini artinya streaming hanya "fully predict" di 2% data. Untuk streaming R² yang valid, pakai 40,550 records ini (yang sudah dipakai untuk hitung R²=0.946447).
-- **Actual `daya` range in predictions: 28.20 - 59.40 W**. Ini konsisten dengan "99.99% standby < 50 W" — model belajar mayoritas dari regime standby. 484 W extreme (peak) tidak masuk ke test predictions.
+- kode streaming/simulasi dan visualisasinya;
+- seluruh PKL hasil eksperimen, model lama, grafik, log, dan backup;
+- draf paper serta dokumen arsitektur yang memuat klaim tidak valid;
+- modul rekomendasi AC dan Azure Function terkait;
+- wrapper folder pilar yang hanya berupa symlink;
+- virtual environment, `node_modules`, build `dist`, cache, dan `.DS_Store`;
+- arsip eksperimen lama setelah ekspor Scopus diselamatkan;
+- referensi yang jelas di luar domain inti (heritage conservation,
+  shipbuilding, EV charging, edge multimodal LLM, building-function remote
+  sensing, farmland energy, dan data-center optimization);
+- kredensial/config lokal `.env` dan file identitas subscription lokal.
 
-## Rekomendasi sebelum lanjut
+## Baseline metodologi yang diterapkan saat renewal
 
-Pilih **satu** dari 3 resolusi untuk inkonsistensi:
+Pertanyaan inti yang lebih defensible:
 
-1. **Trust ground truth (.pkl)** → revisi semua dokumen + figure jadi pakai **10,449 rec/s** throughput, dan **320 ms** cloud latency. Akui edge latency flat.
-2. **Trust dokumen (CLAUDE.md + CONSOLIDATED_RESULTS)** → keep **15,729 rec/s**, **321.3 ms**. Tapi tambahkan catatan bahwa `.pkl` outdated / beda run.
-3. **Trust figure** → pakai 15,729 rec/s, 321.3 ms, dan akui edge/cloud latency adalah simulated constants (bukan measurement). Rasionalisasi: "we used deterministic simulation for reproducibility across hardware".
+> Seberapa baik estimasi daya pada workload sintetis terkalibrasi, dan bagaimana
+> karakteristik komputasi lokal serta profil jaringan teremulasi memengaruhi
+> pembaruan Digital Twin Web-3D?
 
-Aku recommend **opsi 3** karena paling konsisten dengan literatur edge-cloud (paper IEEE/ACM umumnya pakai deterministic latency simulation untuk reproducibility).
+Implementasi baru:
+
+1. audit otomatis trace asli dan karakteristik sampling;
+2. generator keadaan laten serta observasi sensor per skenario/run/seed;
+3. pemisahan `true_*` dari `observed_*`;
+4. baseline median, `V × I`, Ridge, dan Random Forest;
+5. test split berdasarkan run lengkap;
+6. benchmark komputasi lokal terukur dan jaringan teremulasi yang diberi label;
+7. kontrak telemetry dan replay API untuk Web-3D;
+8. MAE/RMSE/R² serta P50/P95/P99, payload, drop, deadline miss, dan proxy
+   staleness.
+
+Kode baru berada di `src/`, konfigurasi di `configs/experiment.json`, dan
+metode lengkap di `docs/METHODOLOGY.md`.
+
+Tidak ada hasil lama yang boleh disalin ke paper baru tanpa pengukuran ulang.

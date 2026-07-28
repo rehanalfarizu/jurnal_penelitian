@@ -1,0 +1,86 @@
+{
+  "status": "architecture_workload_only",
+  "source": {
+    "path": "Data/sensor_data.csv",
+    "rows": 2027520,
+    "expected_rows": 2027520,
+    "expected_rows_match": true,
+    "timestamp_start": "2026-02-23 23:14:43.896301",
+    "timestamp_end": "2026-05-24 01:22:06.727676",
+    "device_count": 1,
+    "device_ids": [
+      "RASPBERRY_PI_GATEWAY_001"
+    ]
+  },
+  "provenance": {
+    "reference_rows": 92160,
+    "inferred_replay_blocks": 22.0,
+    "integer_replay_blocks": true,
+    "relationship": "Legacy augmented file: sequential replays derived from the single historical reference trace.",
+    "source_type": "legacy_augmented_replay"
+  },
+  "quality": {
+    "zero_counts": {
+      "Suhu (C)": 0,
+      "Kelembaban (%)": 0,
+      "Tegangan (V)": 0,
+      "Arus (A)": 0,
+      "Daya (W)": 0,
+      "Jumlah Orang": 102322
+    },
+    "missing_counts": {
+      "Timestamp": 0,
+      "DeviceID": 0,
+      "Suhu (C)": 0,
+      "Kelembaban (%)": 0,
+      "Tegangan (V)": 0,
+      "Arus (A)": 0,
+      "Daya (W)": 0,
+      "Jumlah Orang": 0
+    }
+  },
+  "benchmark_sample": {
+    "method": "evenly spaced positions across the complete augmented file",
+    "requested_rows": 5000,
+    "selected_rows": 5000,
+    "covered_replay_blocks": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21
+    ]
+  },
+  "research_role": {
+    "allowed": [
+      "edge-cloud workload replay",
+      "latency and throughput benchmark",
+      "Digital Twin Web-3D telemetry demonstration"
+    ],
+    "prohibited": [
+      "model accuracy validation",
+      "independent field-observation count",
+      "random train-test split across replayed rows"
+    ],
+    "model_training_used": false,
+    "model_validation_used": false,
+    "model_test_used": false
+  }
+}

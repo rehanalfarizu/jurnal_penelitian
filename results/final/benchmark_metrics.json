@@ -1,0 +1,120 @@
+{
+  "scope": {
+    "compute": "Measured on this machine using time.perf_counter_ns; not a Raspberry Pi or public-cloud measurement.",
+    "network": "configured network emulation; not a measured public cloud",
+    "sample_size": 5000,
+    "model_name": "ridge",
+    "workload": {
+      "source_type": "legacy_augmented_replay",
+      "available_rows": 2027520,
+      "sample_selection": "evenly spaced positions across the complete augmented file",
+      "covered_replay_blocks": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21
+      ],
+      "role": "architecture latency, throughput, routing, and Web-3D replay; excluded from model fitting and accuracy evaluation"
+    },
+    "runtime": {
+      "platform": "macOS-15.7-x86_64-i386-64bit",
+      "python": "3.11.9",
+      "numpy": "2.3.5",
+      "pandas": "2.3.3"
+    }
+  },
+  "actual_local_compute": {
+    "mean_ms": 2.9646953184,
+    "p50_ms": 2.1907180000000004,
+    "p95_ms": 6.298535450000001,
+    "p99_ms": 11.008697020000017,
+    "max_ms": 156.506985
+  },
+  "actual_json_serialization": {
+    "mean_ms": 0.0280368472,
+    "p50_ms": 0.021765,
+    "p95_ms": 0.05532695000000001,
+    "p99_ms": 0.11711260000000007,
+    "max_ms": 1.601829
+  },
+  "actual_edge_path": {
+    "mean_ms": 2.9927321656,
+    "p50_ms": 2.2195669999999996,
+    "p95_ms": 6.350157550000004,
+    "p99_ms": 11.039175600000023,
+    "max_ms": 158.108814,
+    "definition": "local inference plus JSON serialization"
+  },
+  "configured_cloud_path": {
+    "mean_ms": 48.20817189426332,
+    "p50_ms": 48.38572984448786,
+    "p95_ms": 68.03732725953438,
+    "p99_ms": 75.85243536363815,
+    "max_ms": 201.57154321208853,
+    "definition": "local compute proxy plus configured network latency; not a public-cloud measurement"
+  },
+  "configured_network_emulation": {
+    "parameters": {
+      "label": "configured network emulation; not a measured public cloud",
+      "median_ms": 45.0,
+      "jitter_ms": 12.0,
+      "drop_probability": 0.005
+    },
+    "generated_latency": {
+      "mean_ms": 45.21543972866333,
+      "p50_ms": 45.38248270917359,
+      "p95_ms": 64.57686537704625,
+      "p99_ms": 72.34009526846371,
+      "max_ms": 84.73957336917617
+    },
+    "generated_drop_count": 0
+  },
+  "configured_end_to_end": {
+    "mean_ms": 4.023093252369574,
+    "p50_ms": 2.252573,
+    "p95_ms": 7.817310450000002,
+    "p99_ms": 50.63683809149703,
+    "max_ms": 158.108814,
+    "deadline_ms": 3500.0,
+    "deadline_miss_count": 0,
+    "deadline_miss_rate": 0.0,
+    "twin_staleness_proxy": "Equal to configured end-to-end latency; browser render latency is not included.",
+    "warning": "Includes configured, not field-measured, network latency."
+  },
+  "routing": {
+    "edge_count": 4886,
+    "cloud_count": 114,
+    "invalid_electrical_count": 0,
+    "power_anomaly_count": 114,
+    "power_anomaly_threshold_w": 42.6,
+    "rule": "Cloud when voltage/current is zero or observed legacy power exceeds 42.6 W; otherwise edge.",
+    "basis": "p99 legacy power in the real calibration trace; invalid electrical readings are also routed to cloud"
+  },
+  "throughput": {
+    "sequential_model_inferences_per_second": 337.3027891917363,
+    "definition": "sample count divided by summed local inference compute time"
+  },
+  "payload": {
+    "mean_bytes": 193.2526,
+    "p95_bytes": 194.0
+  },
+  "prediction_checksum": 191422.39230627625
+}

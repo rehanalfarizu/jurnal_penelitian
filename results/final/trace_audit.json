@@ -1,0 +1,162 @@
+{
+  "source": {
+    "path": "Data/sensor_data_export_2026-05-17_to_2026-05-23.xlsx",
+    "sha256": "dd8b5028eda7bca0265da4ada881e1ed1f1ec84afb6b6f0a33cd82f9984f4d29",
+    "rows": 92160,
+    "device_count": 1,
+    "device_ids": [
+      "RASPBERRY_PI_GATEWAY_001"
+    ],
+    "timestamp_start_utc": "2026-05-19T17:10:55.418478500+00:00",
+    "timestamp_end_utc": "2026-05-23T18:22:06.727676100+00:00",
+    "duplicate_timestamps": 0
+  },
+  "sampling": {
+    "gap_seconds_p50": 3.5251918,
+    "gap_seconds_p95": 5.1023856499999996,
+    "gap_seconds_p99": 8.59012717,
+    "gap_seconds_max": 1747.1615926
+  },
+  "variables": {
+    "temperature_c": {
+      "count": 92160,
+      "missing": 0,
+      "zero_rate": 1.0850694444444445e-05,
+      "mean": 30.187578125,
+      "std": 1.8527224361845804,
+      "min": 0.0,
+      "p01": 26.1,
+      "p05": 26.9,
+      "p50": 30.5,
+      "p95": 32.8,
+      "p99": 33.5,
+      "max": 33.9
+    },
+    "humidity_pct": {
+      "count": 92160,
+      "missing": 0,
+      "zero_rate": 2.170138888888889e-05,
+      "mean": 66.62470703125,
+      "std": 8.459287906445397,
+      "min": 0.0,
+      "p01": 48.0,
+      "p05": 50.0,
+      "p50": 69.0,
+      "p95": 76.0,
+      "p99": 79.0,
+      "max": 82.0
+    },
+    "voltage_v": {
+      "count": 92160,
+      "missing": 0,
+      "zero_rate": 0.030501302083333334,
+      "mean": 220.10024739583335,
+      "std": 39.706171492941586,
+      "min": 0.0,
+      "p01": 0.0,
+      "p05": 210.4,
+      "p50": 227.1,
+      "p95": 238.5,
+      "p99": 242.5,
+      "max": 250.9
+    },
+    "current_a": {
+      "count": 92160,
+      "missing": 0,
+      "zero_rate": 0.012782118055555555,
+      "mean": 0.1604607204861111,
+      "std": 0.02170077161857782,
+      "min": 0.0,
+      "p01": 0.0,
+      "p05": 0.15,
+      "p50": 0.16,
+      "p95": 0.18,
+      "p99": 0.19,
+      "max": 2.2
+    },
+    "power_w": {
+      "count": 92160,
+      "missing": 0,
+      "zero_rate": 0.030512152777777777,
+      "mean": 35.67210286458333,
+      "std": 6.982095285821362,
+      "min": 0.0,
+      "p01": 0.0,
+      "p05": 31.6,
+      "p50": 36.5,
+      "p95": 41.1,
+      "p99": 42.6,
+      "max": 484.0
+    },
+    "people_count": {
+      "count": 92158,
+      "missing": 2,
+      "zero_rate": 0.730799279498253,
+      "mean": 0.8769179018641897,
+      "std": 1.4860882113931475,
+      "min": 0.0,
+      "p01": 0.0,
+      "p05": 0.0,
+      "p50": 0.0,
+      "p95": 3.0,
+      "p99": 5.0,
+      "max": 5.0
+    }
+  },
+  "pearson_correlation": {
+    "temperature_c": {
+      "temperature_c": 1.0,
+      "humidity_pct": 0.567404,
+      "voltage_v": -0.081561,
+      "current_a": -0.114498,
+      "power_w": -0.169378,
+      "people_count": -0.008347
+    },
+    "humidity_pct": {
+      "temperature_c": 0.567404,
+      "humidity_pct": 1.0,
+      "voltage_v": -0.07053,
+      "current_a": -0.297467,
+      "power_w": -0.186542,
+      "people_count": 0.084513
+    },
+    "voltage_v": {
+      "temperature_c": -0.081561,
+      "humidity_pct": -0.07053,
+      "voltage_v": 1.0,
+      "current_a": 0.421235,
+      "power_w": 0.935039,
+      "people_count": 0.153467
+    },
+    "current_a": {
+      "temperature_c": -0.114498,
+      "humidity_pct": -0.297467,
+      "voltage_v": 0.421235,
+      "current_a": 1.0,
+      "power_w": 0.564511,
+      "people_count": 0.124359
+    },
+    "power_w": {
+      "temperature_c": -0.169378,
+      "humidity_pct": -0.186542,
+      "voltage_v": 0.935039,
+      "current_a": 0.564511,
+      "power_w": 1.0,
+      "people_count": 0.195107
+    },
+    "people_count": {
+      "temperature_c": -0.008347,
+      "humidity_pct": 0.084513,
+      "voltage_v": 0.153467,
+      "current_a": 0.124359,
+      "power_w": 0.195107,
+      "people_count": 1.0
+    }
+  },
+  "limitations": [
+    "Trace berasal dari satu device_id dan satu periode sekitar empat hari.",
+    "Daya pada firmware lama dihitung sebagai tegangan dikali arus; faktor daya tidak diukur.",
+    "Nilai nol dapat berarti beban mati, threshold sensor, atau kegagalan pembacaan.",
+    "Jumlah orang berasal dari alur penyimpanan terpisah dan memiliki nilai hilang."
+  ]
+}
