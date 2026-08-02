@@ -20,9 +20,13 @@
       "sha256": "5a84b04a4cb8bb3698c754369e00e121a45db3621f671145b32136641a069d95",
       "bytes": 60960
     },
+    "scripts/run_azure_live_benchmark.py": {
+      "sha256": "d1542483803985ed8b801653ab65eb4b81a7e4994b2fb558f1c839a934591fcc",
+      "bytes": 18630
+    },
     "notebooks/01_evaluasi_final.ipynb": {
-      "sha256": "3d5c47da2e92694b4d15e46ed4c6fb73218df9944e0d8ecbdd3ca8a5baa2d07a",
-      "bytes": 1987573
+      "sha256": "1961f5522e17415543e326f908718a1a5e1b389e03ef8de02b5b3ef710b544e0",
+      "bytes": 2038507
     },
     "src/data/audit_trace.py": {
       "sha256": "ab0e53b4682c2609c999ffd5f2d491fc0ed2bdfb2e259d7ecb3a62609ff20361",
@@ -55,6 +59,38 @@
     "tests/test_pipeline.py": {
       "sha256": "fdc8f1f6e360021bc8e136861dccdd2da2e0068b1ed140dcd8793c2a1a51d2a2",
       "bytes": 13060
+    },
+    "tests/test_azure_live_benchmark.py": {
+      "sha256": "22cfc01fa62232ab34fd758046dfec1438004801989487027d3548f8f08af519",
+      "bytes": 2863
+    },
+    "Digital_Twin/dashboard_digitaltwin/sensor_iot/azure_setup/azure-function/.funcignore": {
+      "sha256": "3a1196f06a087cf20ddeabf1d82f063c7279d69cfb61a01af8285cf0ad87c73c",
+      "bytes": 334
+    },
+    "Digital_Twin/dashboard_digitaltwin/sensor_iot/azure_setup/azure-function/SaveSensorData/index.js": {
+      "sha256": "afb15c3c6c097211c605dfafa2f1d2934c84cff29d68810dad8ad6df36bd6905",
+      "bytes": 11706
+    },
+    "Digital_Twin/dashboard_digitaltwin/sensor_iot/azure_setup/azure-function/GetTelemetryData/index.js": {
+      "sha256": "31f544e66fecf758a2c48f439d9310dbfddcc3af145c33e35a8ed3802ba20105",
+      "bytes": 10823
+    },
+    "Digital_Twin/dashboard_digitaltwin/sensor_iot/azure_setup/azure-function/ExportSensorData/index.js": {
+      "sha256": "dc8637eea0ae87f593eee1e24a51823e85ddd50053bcd95e8b161efbd4175cc5",
+      "bytes": 6205
+    },
+    "Digital_Twin/dashboard_digitaltwin/sensor_iot/azure_setup/azure-function/package.json": {
+      "sha256": "53369a4af0c7acb8f91346e76209ea1b3bd27a40193978809cab5c61fecc2532",
+      "bytes": 445
+    },
+    "Digital_Twin/dashboard_digitaltwin/sensor_iot/azure_setup/azure-function/package-lock.json": {
+      "sha256": "9e3536e61b7940ff69789567bfc3f4bcb632e2a40f8fc7c67a4ddc7d60c41d9c",
+      "bytes": 12454
+    },
+    "Digital_Twin/dashboard_digitaltwin/sensor_iot/azure_setup/azure-function/test/save-sensor-data.test.js": {
+      "sha256": "f9e572539a708e2edb2cd9f1cd6205456059e2ab857ed5cf429069dc51a2f6ee",
+      "bytes": 6170
     },
     "Digital_Twin/dashboard_digitaltwin/view_virtual/package.json": {
       "sha256": "dd12bc7d9cd253a80cef94acaf3b112c7e6d229aed4c364b8fbf2c2f3f342729",
@@ -273,8 +309,20 @@
       "bytes": 725
     },
     "results/final/RESULTS.md": {
-      "sha256": "cab9edb4cc4022e724c1a5237dd364ade1490a00db78d19da196b48cfefe2067",
-      "bytes": 6841
+      "sha256": "b79e1f42b75e65e9e6db571db6629fc3fbbcc8a0783adabe8ac5bb335dc9ea17",
+      "bytes": 8952
+    },
+    "results/final/AZURE_LIVE_RESULTS.md": {
+      "sha256": "64320e750a641e9216067e7f4fd7f15b2a812c0cd8295a8752ff576ef3e5f40c",
+      "bytes": 2412
+    },
+    "results/final/azure_live_metrics.json": {
+      "sha256": "9b655a3173346ddc91c619017195b7735e69b18e50d67d443ab6e7fa3c48b098",
+      "bytes": 3065
+    },
+    "results/final/azure_live_requests.csv": {
+      "sha256": "e1051513130e613f45fba9fcb0786718300285fec6dcbaa0a89e01ad83011691",
+      "bytes": 57843
     },
     "results/final/benchmark_metrics.json": {
       "sha256": "f5d0f030f23eb6eeeaac99ad82f1e91bdd133566c94a069873188abae0d9cb29",
@@ -307,6 +355,10 @@
     "results/final/figures/05_multiscale_digital_twin.png": {
       "sha256": "702be5160c751fa0188966768e9e1ef0e44bead8caa02cf2990425c8547373be",
       "bytes": 155927
+    },
+    "results/final/figures/06_azure_live_performance.png": {
+      "sha256": "046222123f0b7f13bc64421752bb34d978878cfd735c6d2c51bfe0bdf9686eaf",
+      "bytes": 179622
     },
     "results/final/historical_replay_audit.json": {
       "sha256": "35ae9cd7396623a2294a1f38d1ce39fcedf10d7686099efb67cae05cfe122ba2",

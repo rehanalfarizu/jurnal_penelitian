@@ -1,21 +1,13 @@
 {
-  "name": "mqtt-to-iothub-function",
-  "version": "1.0.0",
-  "description": "Azure Function to bridge MQTT (HiveMQ) to Azure IoT Hub and compress 3D models",
+  "name": "digital-twin-telemetry-functions",
+  "version": "3.0.0",
+  "description": "HTTP telemetry functions for the Digital Twin Azure live evaluation",
   "scripts": {
     "start": "func start",
-    "test": "echo \"No tests yet\"",
-    "compress-models": "node scripts/compress-all-models.js"
+    "test": "node --test test/*.test.js",
+    "check": "node --check SaveSensorData/index.js && node --check GetTelemetryData/index.js && node --check ExportSensorData/index.js"
   },
   "dependencies": {
-    "@azure/data-tables": "^13.2.2",
-    "@azure/event-hubs": "^5.11.0",
-    "@azure/identity": "^4.13.0",
-    "@azure/storage-blob": "^12.17.0",
-    "azure-iot-common": "^1.13.0",
-    "azure-iothub": "^1.16.3"
-  },
-  "devDependencies": {
-    "@azure/functions": "^4.0.0"
+    "@azure/data-tables": "^13.3.2"
   }
 }

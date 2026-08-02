@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.0",
+  "run_id": "azure-live-20260802T165654Z",
+  "generated_at_utc": "2026-08-02T16:57:05.958+00:00",
+  "title": "Evaluasi Kinerja Digital Twin Edge\u2013Cloud Multiskala untuk Monitoring Energi dan Okupansi",
+  "measurement_scope": {
+    "classification": "measured_public_azure_path_with_historical_replay_payloads",
+    "endpoint": "https://func-digitaltwin-2026.azurewebsites.net/api/sensor/save",
+    "azure_services_included": [
+      "Azure Functions",
+      "Azure Table Storage"
+    ],
+    "azure_region": "Southeast Asia",
+    "source_data": "archived_physical_sensor_trace",
+    "physical_sensor_streaming_live": false,
+    "iot_hub_included_in_measured_path": false,
+    "browser_render_included": false,
+    "client_host_timezone": "Asia/Jakarta",
+    "interpretation": "Latensi adalah pengukuran aktual jalur HTTPS publik sampai tulis Azure Table dikonfirmasi. Payload berasal dari replay trace sensor lapangan yang diarsipkan; sensor fisik tidak aktif saat benchmark."
+  },
+  "provenance": {
+    "input_path": "Data/sensor_data_export_2026-05-17_to_2026-05-23.xlsx",
+    "input_sha256": "dd8b5028eda7bca0265da4ada881e1ed1f1ec84afb6b6f0a33cd82f9984f4d29",
+    "input_rows": 92160,
+    "source_device_ids": [
+      "RASPBERRY_PI_GATEWAY_001"
+    ],
+    "source_node_id_status": "architecture_metadata_not_row_level_field"
+  },
+  "runtime": {
+    "client_python": "3.12.12",
+    "client_platform": "macOS-15.7-x86_64-i386-64bit",
+    "expected_function_version": "v3.0-azure-live-replay"
+  },
+  "sample": {
+    "warmup_requests": 5,
+    "measured_requests": 200,
+    "successful_contract_requests": 200,
+    "failed_requests": 0,
+    "sampling": "evenly_spaced_rows_from_archived_physical_sensor_trace",
+    "concurrency": 1,
+    "http_connection": "persistent_https_keep_alive_after_warmup"
+  },
+  "reliability": {
+    "success_rate_percent": 100.0,
+    "error_rate_percent": 0.0,
+    "deadline_ms": 3500.0,
+    "deadline_compliance_percent": 100.0,
+    "http_status_counts": {
+      "200": 200
+    }
+  },
+  "latency_ms": {
+    "client_end_to_end": {
+      "n": 200,
+      "min": 42.875,
+      "mean": 49.662209999999995,
+      "p50": 46.5545,
+      "p95": 56.948699999999995,
+      "p99": 99.74318999999927,
+      "max": 213.353
+    },
+    "function_server_processing": {
+      "n": 200,
+      "min": 6.2,
+      "mean": 9.38579,
+      "p50": 8.0485,
+      "p95": 13.988949999999999,
+      "p99": 18.998309999999996,
+      "max": 140.23
+    },
+    "table_storage_write": {
+      "n": 200,
+      "min": 5.931,
+      "mean": 9.108395,
+      "p50": 7.733499999999999,
+      "p95": 13.732949999999999,
+      "p99": 18.752249999999993,
+      "max": 139.985
+    },
+    "client_network_overhead_estimate": {
+      "n": 200,
+      "min": 35.757,
+      "mean": 40.27642,
+      "p50": 38.158500000000004,
+      "p95": 45.45049999999999,
+      "p99": 62.31181999999975,
+      "max": 205.516
+    }
+  },
+  "throughput": {
+    "measured_requests_per_second": 19.704266364585376,
+    "successful_requests_per_second": 19.704266364585376
+  }
+}

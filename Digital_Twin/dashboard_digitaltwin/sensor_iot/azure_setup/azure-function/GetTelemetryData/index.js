@@ -90,14 +90,16 @@ async function handleLatest(context, tableClient) {
 
     let latest = null;
     for await (const entity of entities) {
-        if (!latest || new Date(entity.timestamp || entity.receivedAt) > new Date(latest.timestamp || latest.receivedAt)) {
+        const entityTime = entity.eventTimestamp || entity.sourceTimestamp || entity.timestamp || entity.receivedAt;
+        const latestTime = latest && (latest.eventTimestamp || latest.sourceTimestamp || latest.timestamp || latest.receivedAt);
+        if (!latest || new Date(entityTime) > new Date(latestTime)) {
             latest = entity;
         }
     }
 
     if (latest) {
         // Return UTC ISO timestamp - frontend handles timezone conversion for display
-        const timestampUtc = latest.timestamp || latest.receivedAt || new Date().toISOString();
+        const timestampUtc = latest.eventTimestamp || latest.sourceTimestamp || latest.timestamp || latest.receivedAt || new Date().toISOString();
         context.res.status = 200;
         context.res.body = {
             success: true,
@@ -128,7 +130,7 @@ async function handleHistory(context, tableClient, hours, limit) {
 
     const data = [];
     for await (const entity of entities) {
-        const entityTimestamp = entity.timestamp || entity.receivedAt;
+        const entityTimestamp = entity.eventTimestamp || entity.sourceTimestamp || entity.timestamp || entity.receivedAt;
         if (entityTimestamp && new Date(entityTimestamp) >= cutoffTime) {
             data.push({
                 timestamp: entityTimestamp,
@@ -167,7 +169,7 @@ async function handleStats(context, tableClient, hours) {
     let maxDaya = -Infinity, minDaya = Infinity;
 
     for await (const entity of entities) {
-        const entityTimestamp = entity.timestamp || entity.receivedAt;
+        const entityTimestamp = entity.eventTimestamp || entity.sourceTimestamp || entity.timestamp || entity.receivedAt;
         if (entityTimestamp && new Date(entityTimestamp) >= cutoffTime) {
             count++;
             totalSuhu += entity.suhu || 0;

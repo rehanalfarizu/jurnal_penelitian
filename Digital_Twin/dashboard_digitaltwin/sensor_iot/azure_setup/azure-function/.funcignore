@@ -1,0 +1,13 @@
+.git*
+.vscode
+local.settings.json
+test
+node_modules
+
+# Keep the live deployment surface aligned with the three functions already
+# present in func-digitaltwin-2026. Legacy/event-trigger functions remain in
+# source for audit but are not activated by this code-only deployment.
+AvroToTable
+IoTHubToStorage
+MqttToIoTHub
+SavePeopleCount

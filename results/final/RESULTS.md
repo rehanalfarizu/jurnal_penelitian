@@ -118,6 +118,41 @@ pesan dirutekan ke cloud. Latensi render browser, replay clock, dan
 multi-client juga belum
 tercakup.
 
+## Pengukuran public Azure aktual berbasis replay
+
+Pengukuran terpisah dilakukan terhadap endpoint publik
+`https://func-digitaltwin-2026.azurewebsites.net/api/sensor/save`. Jalur yang
+termasuk adalah HTTPS client → Azure Functions → Azure Table Storage pada
+region Southeast Asia. Lima request dipakai sebagai warmup dan 200 request
+berurutan dipakai sebagai sampel pengukuran. Setiap payload berasal dari baris
+yang dipilih merata dari trace XLSX historis dan diberi `runId`, `messageId`,
+`sourceRowId`, serta timestamp sumber. Payload replay disimpan pada tabel
+`BenchmarkTelemetry`, sehingga tidak tercampur dengan telemetry operasional
+`SensorTelemetry`; 205 entity (warmup dan pengukuran) terkonfirmasi tersimpan.
+
+| Metrik jalur Azure publik | P50 (ms) | P95 (ms) | P99 (ms) | Maksimum (ms) |
+|---|---:|---:|---:|---:|
+| End-to-end HTTPS client | 46.6 | 56.9 | 99.7 | 213.4 |
+| Pemrosesan Function | 8.0 | 14.0 | 19.0 | 140.2 |
+| Tulis Azure Table Storage | 7.7 | 13.7 | 18.8 | 140.0 |
+| Estimasi overhead client/network | 38.2 | 45.5 | 62.3 | 205.5 |
+
+Seluruh 200 request menghasilkan HTTP 200 dan kontrak respons yang benar;
+tingkat keberhasilan **100%**, error **0%**, dan kepatuhan deadline 3.500 ms
+**100%**. Throughput sekuensial yang teramati adalah **19,70 request/detik**.
+Ringkasan lengkap dan data per-request tersedia pada
+[`azure_live_metrics.json`](azure_live_metrics.json) dan
+[`azure_live_requests.csv`](azure_live_requests.csv); visualnya ada pada
+[`06_azure_live_performance.png`](figures/06_azure_live_performance.png).
+
+Interpretasi hasil ini dibatasi pada kinerja jalur Azure publik yang menerima
+replay data historis. Sensor fisik tidak melakukan streaming saat benchmark,
+IoT Hub dan render browser tidak termasuk dalam jalur terukur, dan penelitian
+ini tidak menjalankan estimator sehingga tidak ada klaim akurasi/presisi model.
+Dengan demikian angka Azure live melengkapi baseline emulasi pada bagian
+sebelumnya, bukan menggantikannya atau mengubah replay menjadi observasi
+lapangan baru.
+
 ## Digital Twin geospasial–indoor multiskala
 
 - **LoD-A (tapak geospasial)** menggunakan
@@ -142,6 +177,7 @@ tercakup.
 - [Pemeriksaan software dan routing](figures/03_monitoring_checks.png)
 - [Karakteristik latensi](figures/04_latency_characteristics.png)
 - [Pemetaan Digital Twin multiskala](figures/05_multiscale_digital_twin.png)
+- [Kinerja jalur Azure publik berbasis replay](figures/06_azure_live_performance.png)
 
 ## Kesimpulan yang didukung
 

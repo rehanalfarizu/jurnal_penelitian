@@ -50,6 +50,14 @@ terpisah agar nilai fisik tidak tercampur dengan workload turunan.
 - `notebooks/01_evaluasi_final.ipynb` — workflow eksekutabel dari audit sumber,
   lineage, benchmark, schema/API, visual, sampai pemeriksaan integrasi.
 - `results/final/` — metrik, visual, konfigurasi, dan manifest hasil.
+- `results/final/azure_live_metrics.json` — metrik pengukuran aktual jalur
+  HTTPS Azure publik dengan payload replay terkontrol.
+- `results/final/azure_live_requests.csv` — bukti per-request untuk benchmark
+  Azure live (5 warmup + 200 pengukuran).
+- `results/final/figures/06_azure_live_performance.png` — visual ringkas
+  distribusi latensi, komponen waktu, dan kepatuhan deadline Azure live.
+- `scripts/run_azure_live_benchmark.py` — skrip reproduksi benchmark Azure
+  live tanpa menyimpan function key ke disk.
 - `pdf_references/REFERENCE_AUDIT.md` — matriks relevansi korpus jurnal dan
   batas penggunaannya.
 
@@ -108,11 +116,21 @@ bukan pada envelope HTTP.
 
 - Latensi pemrosesan lokal benar-benar diukur pada mesin yang menjalankan
   eksperimen.
-- Latensi jaringan adalah emulasi dari parameter konfigurasi, bukan
-  pengukuran public cloud.
-- Perbandingan edge–cloud terhadap cloud-only memakai pesan, pemrosesan,
-  seed, dan draw jaringan terkonfigurasi yang sama; ini pembanding terkontrol,
-  bukan uji public cloud.
+- Baseline emulasi pada `results/final/benchmark_metrics.json` menggunakan
+  latensi jaringan dari parameter konfigurasi; baseline itu bukan pengukuran
+  public cloud.
+- Pengukuran Azure live pada `results/final/azure_live_metrics.json` mengukur
+  jalur HTTPS publik aktual sampai Azure Table Storage dikonfirmasi. Benchmark
+  tersebut memakai 5 warmup dan 200 request berurutan, dengan 100% HTTP 200
+  dan 100% kepatuhan deadline 3,5 detik.
+- Payload Azure live adalah replay terkontrol dari trace sensor lapangan yang
+  diarsipkan. Sensor fisik tidak aktif selama pengukuran, IoT Hub tidak berada
+  di jalur yang diukur, dan render browser tidak termasuk. Karena itu hasil ini
+  adalah pengukuran kinerja jalur cloud publik berbasis replay, bukan bukti
+  streaming sensor lapangan live atau akurasi model.
+- Perbandingan edge–cloud terhadap cloud-only memakai pesan, pemrosesan, seed,
+  dan draw jaringan terkonfigurasi yang sama; ini pembanding terkontrol dan
+  tetap dipisahkan dari pengukuran Azure live.
 - `freshness` benchmark adalah proksi jalur pemrosesan; umur kalender data
   historis dilaporkan terpisah melalui timestamp sumber.
 - Seluruh 2.027.520 baris dipindai untuk audit lineage/kualitas, sedangkan

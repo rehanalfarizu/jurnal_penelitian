@@ -90,7 +90,7 @@ module.exports = async function (context, req) {
 
                 // Filter and process this page - client-side filtering
                 for (const entity of entitiesPage) {
-                    const entityTimestamp = entity.timestamp || entity.receivedAt;
+                    const entityTimestamp = entity.eventTimestamp || entity.sourceTimestamp || entity.timestamp || entity.receivedAt;
                     if (!entityTimestamp) continue;
 
                     // Client-side date range filter
