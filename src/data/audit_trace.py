@@ -1,4 +1,4 @@
-"""Audit the real trace and write machine-readable calibration statistics."""
+"""Audit the archived physical-sensor trace and its derived energy."""
 
 from __future__ import annotations
 
@@ -63,7 +63,81 @@ def _series_summary(series: pd.Series) -> dict:
     }
 
 
-def audit_trace(path: Path) -> dict:
+def integrate_legacy_energy(
+    timestamps: pd.Series,
+    power: pd.Series,
+    *,
+    max_gap_seconds: float,
+    timestamp_basis: str,
+    measurement_role: str,
+) -> tuple[pd.DataFrame, dict]:
+    """Integrate recorded V×I power while exposing the metrological scope.
+
+    The legacy firmware records RMS voltage and current and derives its power
+    field as V×I. This helper therefore reports a reproducible monitoring
+    indicator in Wh, not a direct kWh-meter channel or an active-power truth.
+    """
+    if max_gap_seconds <= 0:
+        raise ValueError("max_gap_seconds harus positif.")
+
+    timestamp_values = pd.to_datetime(
+        timestamps, utc=True, format="mixed", errors="coerce"
+    )
+    power_values = pd.to_numeric(power, errors="coerce")
+    interval_seconds = timestamp_values.diff().dt.total_seconds()
+    previous_power = power_values.shift(1)
+    valid = (
+        interval_seconds.gt(0)
+        & interval_seconds.le(max_gap_seconds)
+        & power_values.notna()
+        & previous_power.notna()
+        & power_values.ge(0)
+        & previous_power.ge(0)
+    )
+    interval_wh = pd.Series(0.0, index=power_values.index, dtype=float)
+    interval_wh.loc[valid] = (
+        (power_values.loc[valid] + previous_power.loc[valid])
+        * 0.5
+        * interval_seconds.loc[valid]
+        / 3600.0
+    )
+    status = pd.Series(
+        "gap_or_value_excluded", index=power_values.index, dtype="string"
+    )
+    status.loc[valid] = "integrated"
+    if len(status):
+        status.iloc[0] = "trace_start"
+
+    lookup = pd.DataFrame(
+        {
+            "energy_interval_legacy_wh": interval_wh,
+            "energy_cumulative_legacy_wh": interval_wh.cumsum(),
+            "energy_integration_status": status,
+        }
+    )
+    energy_wh = float(lookup["energy_cumulative_legacy_wh"].iloc[-1])
+    audit = {
+        "method": "trapezoidal_integration_of_recorded_legacy_v_times_i_power",
+        "timestamp_basis": timestamp_basis,
+        "measurement_role": measurement_role,
+        "max_gap_seconds": float(max_gap_seconds),
+        "trace_cycle_rows": int(len(power_values)),
+        "integrated_intervals": int(valid.sum()),
+        "excluded_intervals": int((~valid).sum()),
+        "energy_wh": energy_wh,
+        "trace_cycle_energy_legacy_wh": energy_wh,
+        "active_energy_ground_truth": False,
+        "interpretation": (
+            "Derived from the recorded legacy V×I power field. It is a "
+            "reproducible monitoring indicator, not a direct kWh-meter "
+            "channel or an active-energy measurement with recorded "
+            "power-factor evidence."
+        ),
+    }
+    return lookup, audit
+
+
+def audit_trace(path: Path, *, max_energy_gap_seconds: float = 10.0) -> dict:
     frame = load_trace(path)
     timestamp = frame["timestamp"].dropna()
     gaps = timestamp.diff().dt.total_seconds().dropna()
@@ -72,6 +146,14 @@ def audit_trace(path: Path) -> dict:
 
     with path.open("rb") as handle:
         digest = hashlib.sha256(handle.read()).hexdigest()
+
+    _, derived_energy = integrate_legacy_energy(
+        frame["timestamp"],
+        frame["power_w"],
+        max_gap_seconds=max_energy_gap_seconds,
+        timestamp_basis="exported_workbook_timestamp",
+        measurement_role="archived_physical_sensor_trace",
+    )
 
     return {
         "source": {
@@ -92,9 +174,11 @@ def audit_trace(path: Path) -> dict:
         },
         "variables": {column: _series_summary(frame[column]) for column in NUMERIC_COLUMNS},
         "pearson_correlation": correlations.to_dict(),
+        "derived_energy": derived_energy,
         "limitations": [
-            "Trace berasal dari satu device_id dan satu periode sekitar empat hari.",
-            "Daya pada firmware lama dihitung sebagai tegangan dikali arus; faktor daya tidak diukur.",
+            "Trace memakai satu device_id yang berfungsi sebagai label gateway agregasi Raspberry Pi; ID ini tidak mengidentifikasi atau menghitung setiap node sensor fisik.",
+            "Arsitektur legacy menggabungkan akuisisi ESP32 dan alur gateway/okupansi Raspberry Pi, tetapi workbook tidak menyimpan source-node ID per baris.",
+            "Firmware lama merekam sensor tegangan dan arus fisik, lalu menghitung daya sebagai tegangan dikali arus; faktor daya tidak direkam.",
             "Nilai nol dapat berarti beban mati, threshold sensor, atau kegagalan pembacaan.",
             "Jumlah orang berasal dari alur penyimpanan terpisah dan memiliki nilai hilang.",
         ],
@@ -105,8 +189,11 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--max-energy-gap-seconds", type=float, default=10.0)
     args = parser.parse_args()
-    result = audit_trace(args.input)
+    result = audit_trace(
+        args.input, max_energy_gap_seconds=args.max_energy_gap_seconds
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2), encoding="utf-8")
     print(f"Audit tersimpan: {args.output} ({result['source']['rows']:,} baris)")

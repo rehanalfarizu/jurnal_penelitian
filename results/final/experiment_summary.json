@@ -1,392 +1,236 @@
 {
   "pipeline_status": "completed",
-  "run_type": "final_configured_experiment",
-  "rows": 493700,
-  "runs": 20,
-  "architecture_workload": {
-    "source_type": "legacy_augmented_replay",
+  "evaluation_type": "historical_replay_architecture_evaluation",
+  "project_title": "Evaluasi Kinerja Digital Twin Edge\u2013Cloud Multiskala untuk Monitoring Energi dan Okupansi",
+  "claim_scope": "performance evaluation of a monitoring-oriented one-way Digital Twin prototype using deterministic replay derived from one archived physical-sensor trace; field-origin telemetry and replay benchmark results are reported separately",
+  "reference_trace": {
+    "rows": 92160,
+    "device_count": 1,
+    "timestamp_start_utc": "2026-05-19T17:10:55.418478500+00:00",
+    "timestamp_end_utc": "2026-05-23T18:22:06.727676100+00:00",
+    "derived_energy": {
+      "method": "trapezoidal_integration_of_recorded_legacy_v_times_i_power",
+      "timestamp_basis": "exported_workbook_timestamp",
+      "measurement_role": "archived_physical_sensor_trace",
+      "max_gap_seconds": 10.0,
+      "trace_cycle_rows": 92160,
+      "integrated_intervals": 91488,
+      "excluded_intervals": 672,
+      "energy_wh": 3355.3171338859797,
+      "trace_cycle_energy_legacy_wh": 3355.3171338859797,
+      "active_energy_ground_truth": false,
+      "interpretation": "Derived from the recorded legacy V\u00d7I power field. It is a reproducible monitoring indicator, not a direct kWh-meter channel or an active-energy measurement with recorded power-factor evidence."
+    },
+    "measurement_provenance": {
+      "origin": "archived telemetry from a physical sensor deployment on a monitored electrical installation",
+      "gateway_id_semantics": "The workbook DeviceID identifies the Raspberry Pi aggregation gateway, not a count or unique identifier of every physical sensing node.",
+      "hardware_roles": {
+        "ESP32": "field acquisition node for temperature, humidity, RMS voltage, RMS current, and legacy V\u00d7I power",
+        "Raspberry Pi": "edge aggregation gateway; the legacy pipeline records its gateway ID for combined telemetry and carries the occupancy/camera path separately"
+      },
+      "firmware_sensor_chain": {
+        "voltage_sensor": "ZMPT101B",
+        "current_sensor": "SCT013-000",
+        "power_calculation": "RMS voltage multiplied by RMS current; no power-factor channel in the archived firmware"
+      },
+      "pln_kwh_reference_comparison": {
+        "status": "researcher-reported field comparison",
+        "reference": "display reading of the PLN kWh meter for the monitored installation",
+        "quantitative_interval_records_available_in_repository": false,
+        "reproducible_error_metric_available": false,
+        "interpretation": "The comparison supports the field origin and prior practical verification of the sensor deployment, but this repository cannot recompute a calibration error without timestamped start/end meter readings."
+      }
+    }
+  },
+  "near_realtime_deadline": {
+    "seconds": 3.5,
+    "basis": "operational deadline rounded from the original trace median inter-record gap of 3.5251918 seconds; not the legacy firmware nominal publish interval"
+  },
+  "historical_replay": {
     "rows": 2027520,
-    "inferred_replay_blocks": 22.0,
-    "used_for_model_accuracy": false
+    "replay_blocks": 22.0,
+    "sample_rows": 5000,
+    "rows_scanned_not_messages_benchmarked": true,
+    "lineage_classification": "deterministic_replay_of_transformed_historical_trace",
+    "all_replay_payloads_identical_to_first_block": true,
+    "transformation_code_available": false,
+    "independent_field_observations_claimed": false
   },
-  "model_metrics": {
-    "constant_train_median": {
-      "overall": {
-        "mae_w": 6.873672678674207,
-        "rmse_w": 8.095029525119271,
-        "r2": -2.0812742082867692
-      },
-      "by_scenario": {
-        "cool_low_load": {
-          "mae_w": 10.597298084958407,
-          "rmse_w": 10.791356710751806,
-          "r2": -27.05664093308066
-        },
-        "sensor_degraded": {
-          "mae_w": 3.1126263933992186,
-          "rmse_w": 3.754179363121132,
-          "r2": -1.0221042223934664
-        }
-      },
-      "by_run": {
-        "cool_low_load_run_00": {
-          "mae_w": 10.802341254179831,
-          "rmse_w": 10.972127170233867,
-          "r2": -31.5636022590554
-        },
-        "cool_low_load_run_01": {
-          "mae_w": 10.757947133256247,
-          "rmse_w": 10.916342691568442,
-          "r2": -33.71094570046894
-        },
-        "cool_low_load_run_02": {
-          "mae_w": 10.11075855524323,
-          "rmse_w": 10.36550164530407,
-          "r2": -19.598120648506157
-        },
-        "cool_low_load_run_03": {
-          "mae_w": 10.718209398599665,
-          "rmse_w": 10.900320744164075,
-          "r2": -29.1797326865849
-        },
-        "sensor_degraded_run_00": {
-          "mae_w": 2.92832248888205,
-          "rmse_w": 3.6019872351382047,
-          "r2": -0.8377147965422296
-        },
-        "sensor_degraded_run_01": {
-          "mae_w": 3.6294350527945363,
-          "rmse_w": 4.189387969760764,
-          "r2": -2.078612128726935
-        },
-        "sensor_degraded_run_02": {
-          "mae_w": 2.9933473059218856,
-          "rmse_w": 3.6151617980780095,
-          "r2": -0.8012741897618516
-        },
-        "sensor_degraded_run_03": {
-          "mae_w": 2.8998571570296927,
-          "rmse_w": 3.575432034256828,
-          "r2": -0.8095282892092721
-        }
-      },
-      "run_level_summary": {
-        "mae_w": {
-          "n_runs": 8,
-          "mean": 6.855027293238392,
-          "standard_deviation": 4.012790832653435,
-          "ci95_low": 4.074305116170986,
-          "ci95_high": 9.6357494703058
-        },
-        "rmse_w": {
-          "n_runs": 8,
-          "mean": 7.267032661063032,
-          "standard_deviation": 3.774255123663315,
-          "ci95_low": 4.651607297030039,
-          "ci95_high": 9.882458025096025
-        },
-        "r2": {
-          "n_runs": 8,
-          "mean": -14.82244133735696,
-          "standard_deviation": 15.198278161155084,
-          "ci95_low": -25.35431077646689,
-          "ci95_high": -4.290571898247032
-        }
-      }
+  "monitoring_results": {
+    "local_monitoring": {
+      "mean_ms": 0.056245000600000004,
+      "p50_ms": 0.0448595,
+      "p95_ms": 0.10244195,
+      "p99_ms": 0.18061181000000004,
+      "max_ms": 3.139216,
+      "definition": "Structural/electrical value checks, power-consistency check, routing, and payload construction on the local host.",
+      "validation_scope": "Software-level structure and value checks only; not field validation or metrological validation of active power."
     },
-    "firmware_v_times_i": {
-      "overall": {
-        "mae_w": 3.1488368558014,
-        "rmse_w": 9.121202438754553,
-        "r2": -2.911989350957538
-      },
-      "by_scenario": {
-        "cool_low_load": {
-          "mae_w": 2.130405085777415,
-          "rmse_w": 6.160224823375887,
-          "r2": -8.142747000440297
-        },
-        "sensor_degraded": {
-          "mae_w": 4.177503439446037,
-          "rmse_w": 11.353370473549257,
-          "r2": -17.4936706545469
-        }
-      },
-      "by_run": {
-        "cool_low_load_run_00": {
-          "mae_w": 2.2933610029364946,
-          "rmse_w": 6.60484683091727,
-          "r2": -10.799844321568292
-        },
-        "cool_low_load_run_01": {
-          "mae_w": 1.7664436147434115,
-          "rmse_w": 5.115362412881912,
-          "r2": -6.621929731503399
-        },
-        "cool_low_load_run_02": {
-          "mae_w": 1.64086143742058,
-          "rmse_w": 4.837632652539357,
-          "r2": -3.486552165601335
-        },
-        "cool_low_load_run_03": {
-          "mae_w": 2.821134114883098,
-          "rmse_w": 7.655405002397837,
-          "r2": -13.885834194040216
-        },
-        "sensor_degraded_run_00": {
-          "mae_w": 3.5919000652221693,
-          "rmse_w": 10.244543740804405,
-          "r2": -13.865482686619348
-        },
-        "sensor_degraded_run_01": {
-          "mae_w": 4.051559842100434,
-          "rmse_w": 11.022447094168458,
-          "r2": -20.311295914231025
-        },
-        "sensor_degraded_run_02": {
-          "mae_w": 4.863154465549895,
-          "rmse_w": 12.612268399938992,
-          "r2": -20.923543809476115
-        },
-        "sensor_degraded_run_03": {
-          "mae_w": 4.203462293714581,
-          "rmse_w": 11.405399053028665,
-          "r2": -17.41320096821661
-        }
-      },
-      "run_level_summary": {
-        "mae_w": {
-          "n_runs": 8,
-          "mean": 3.153984604571333,
-          "standard_deviation": 1.2003779429226789,
-          "ci95_low": 2.322165128812496,
-          "ci95_high": 3.98580408033017
-        },
-        "rmse_w": {
-          "n_runs": 8,
-          "mean": 8.687238148334611,
-          "standard_deviation": 3.015470934354049,
-          "ci95_low": 6.597623401104983,
-          "ci95_high": 10.77685289556424
-        },
-        "r2": {
-          "n_runs": 8,
-          "mean": -13.413460473907042,
-          "standard_deviation": 6.232475526069053,
-          "ci95_low": -17.73234566780841,
-          "ci95_high": -9.094575280005673
-        }
-      }
+    "edge_path": {
+      "mean_ms": 0.0935556192,
+      "p50_ms": 0.07323,
+      "p95_ms": 0.17186920000000006,
+      "p99_ms": 0.2698806700000002,
+      "max_ms": 3.6762449999999998,
+      "definition": "local monitoring processing plus JSON serialization"
     },
-    "ridge": {
-      "overall": {
-        "mae_w": 1.2773478850882025,
-        "rmse_w": 1.7608020124925516,
-        "r2": 0.8542144343205995
-      },
-      "by_scenario": {
-        "cool_low_load": {
-          "mae_w": 1.2833808743870907,
-          "rmse_w": 1.8551475444451928,
-          "r2": 0.17083590289802175
-        },
-        "sensor_degraded": {
-          "mae_w": 1.2712542667684341,
-          "rmse_w": 1.660074287808746,
-          "r2": 0.6046073917772965
-        }
-      },
-      "by_run": {
-        "cool_low_load_run_00": {
-          "mae_w": 1.2901932895875265,
-          "rmse_w": 1.866327830664898,
-          "r2": 0.057835706857268576
-        },
-        "cool_low_load_run_01": {
-          "mae_w": 1.1595207432540255,
-          "rmse_w": 1.6390867536147449,
-          "r2": 0.21744295486953347
-        },
-        "cool_low_load_run_02": {
-          "mae_w": 1.1521235192694255,
-          "rmse_w": 1.5795698587764375,
-          "r2": 0.5216732999641414
-        },
-        "cool_low_load_run_03": {
-          "mae_w": 1.531746973640489,
-          "rmse_w": 2.258733566410424,
-          "r2": -0.29588614242093314
-        },
-        "sensor_degraded_run_00": {
-          "mae_w": 1.2516775448339896,
-          "rmse_w": 1.6164833411891715,
-          "r2": 0.6298853806149579
-        },
-        "sensor_degraded_run_01": {
-          "mae_w": 1.3021465855621257,
-          "rmse_w": 1.6970243743579494,
-          "r2": 0.49483881449145717
-        },
-        "sensor_degraded_run_02": {
-          "mae_w": 1.2924093698786825,
-          "rmse_w": 1.7281391335496652,
-          "r2": 0.5883939423907126
-        },
-        "sensor_degraded_run_03": {
-          "mae_w": 1.238827493280637,
-          "rmse_w": 1.5950748517300326,
-          "r2": 0.6398607473180543
-        }
-      },
-      "run_level_summary": {
-        "mae_w": {
-          "n_runs": 8,
-          "mean": 1.2773306899133625,
-          "standard_deviation": 0.11797874280575404,
-          "ci95_low": 1.1955755922210265,
-          "ci95_high": 1.3590857876056985
-        },
-        "rmse_w": {
-          "n_runs": 8,
-          "mean": 1.7475549637866654,
-          "standard_deviation": 0.22638626143480622,
-          "ci95_low": 1.5906772883712037,
-          "ci95_high": 1.9044326392021271
-        },
-        "r2": {
-          "n_runs": 8,
-          "mean": 0.35675558801064905,
-          "standard_deviation": 0.33580859867489254,
-          "ci95_low": 0.12405210145295603,
-          "ci95_high": 0.5894590745683421
-        }
-      }
+    "configured_end_to_end": {
+      "mean_ms": 1.1239167059695745,
+      "p50_ms": 0.073407,
+      "p95_ms": 0.2015583,
+      "p99_ms": 46.106159298930315,
+      "max_ms": 74.16560431744718,
+      "attempted_count": 5000,
+      "delivered_count": 5000,
+      "dropped_count": 0,
+      "deadline_ms": 3500.0,
+      "deadline_basis": "operational deadline rounded from the original trace median inter-record gap of 3.5251918 seconds; not the legacy firmware nominal publish interval",
+      "deadline_miss_count": 0,
+      "deadline_miss_rate": 0.0,
+      "freshness_proxy": "Processing plus configured network latency; browser rendering and historical age are excluded.",
+      "warning": "Network latency is configured, not field-measured.",
+      "definition": "Overall mixture of edge-routed and delivered cloud-routed messages; route composition affects its percentiles."
     },
-    "random_forest": {
-      "overall": {
-        "mae_w": 2.310776502653985,
-        "rmse_w": 2.821258780210999,
-        "r2": 0.6257349081265767
+    "throughput": {
+      "sequential_messages_per_second": 6032.781876098543,
+      "definition": "Messages divided by measured wall time for monitoring and serialization loop on this machine."
+    },
+    "routing": {
+      "edge_count": 4886,
+      "cloud_count": 114,
+      "reason_counts": {
+        "normal_local_monitoring": 4886,
+        "missing_or_nonfinite_value": 0,
+        "invalid_electrical_reading": 0,
+        "current_below_legacy_threshold": 0,
+        "power_above_trace_p99": 114
       },
-      "by_scenario": {
-        "cool_low_load": {
-          "mae_w": 3.2567170900118474,
-          "rmse_w": 3.5702189610049264,
-          "r2": -2.0709537898926973
-        },
-        "sensor_degraded": {
-          "mae_w": 1.3553296077625412,
-          "rmse_w": 1.7676062371843948,
-          "r2": 0.5517249675415501
-        }
-      },
-      "by_run": {
-        "cool_low_load_run_00": {
-          "mae_w": 3.272548234427411,
-          "rmse_w": 3.5983440673246267,
-          "r2": -2.502322638149042
-        },
-        "cool_low_load_run_01": {
-          "mae_w": 3.1896918903963614,
-          "rmse_w": 3.4616884035688624,
-          "r2": -2.490503445207434
-        },
-        "cool_low_load_run_02": {
-          "mae_w": 3.1524251653146167,
-          "rmse_w": 3.45228898799627,
-          "r2": -1.2848686227622435
-        },
-        "cool_low_load_run_03": {
-          "mae_w": 3.412243078582113,
-          "rmse_w": 3.759858639259245,
-          "r2": -2.59070616952467
-        },
-        "sensor_degraded_run_00": {
-          "mae_w": 1.3030787147045746,
-          "rmse_w": 1.6745308548678248,
-          "r2": 0.6028266666688842
-        },
-        "sensor_degraded_run_01": {
-          "mae_w": 1.3959803817885985,
-          "rmse_w": 1.9042558867673873,
-          "r2": 0.3639307111327449
-        },
-        "sensor_degraded_run_02": {
-          "mae_w": 1.3571965270869095,
-          "rmse_w": 1.7290582550106393,
-          "r2": 0.5879559955165192
-        },
-        "sensor_degraded_run_03": {
-          "mae_w": 1.3650884480389798,
-          "rmse_w": 1.7544800831123482,
-          "r2": 0.5642822943274548
-        }
-      },
-      "run_level_summary": {
-        "mae_w": {
-          "n_runs": 8,
-          "mean": 2.3060315550424457,
-          "standard_deviation": 1.0194442139087267,
-          "ci95_low": 1.5995927566801207,
-          "ci95_high": 3.0124703534047708
-        },
-        "rmse_w": {
-          "n_runs": 8,
-          "mean": 2.6668131472384005,
-          "standard_deviation": 0.9702099075743849,
-          "ci95_low": 1.994491982514584,
-          "ci95_high": 3.339134311962217
-        },
-        "r2": {
-          "n_runs": 8,
-          "mean": -0.8436756509997234,
-          "standard_deviation": 1.5256153470810645,
-          "ci95_low": -1.9008731492549467,
-          "ci95_high": 0.21352184725549983
-        }
-      }
-    }
-  },
-  "benchmark_scope": {
-    "compute": "Measured on this machine using time.perf_counter_ns; not a Raspberry Pi or public-cloud measurement.",
-    "network": "configured network emulation; not a measured public cloud",
-    "sample_size": 5000,
-    "model_name": "ridge",
-    "workload": {
-      "source_type": "legacy_augmented_replay",
-      "available_rows": 2027520,
-      "sample_selection": "evenly spaced positions across the complete augmented file",
-      "covered_replay_blocks": [
-        0,
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-        8,
-        9,
-        10,
-        11,
-        12,
-        13,
-        14,
-        15,
-        16,
-        17,
-        18,
-        19,
-        20,
-        21
+      "covered_reasons": [
+        "normal_local_monitoring",
+        "power_above_trace_p99"
       ],
-      "role": "architecture latency, throughput, routing, and Web-3D replay; excluded from model fitting and accuracy evaluation"
+      "uncovered_reasons": [
+        "missing_or_nonfinite_value",
+        "invalid_electrical_reading",
+        "current_below_legacy_threshold"
+      ],
+      "power_anomaly_threshold_w": 42.6,
+      "rule": "Cloud for missing/non-finite values, invalid electrical readings, current below the legacy 0.1 A threshold, or legacy power above 42.6 W.",
+      "basis": "p99 legacy power in the original historical trace plus software rules for missing, non-finite, invalid electrical, and sub-0.1 A readings"
     },
-    "runtime": {
-      "platform": "macOS-15.7-x86_64-i386-64bit",
-      "python": "3.11.9",
-      "numpy": "2.3.5",
-      "pandas": "2.3.3"
+    "data_quality": {
+      "valid_count": 5000,
+      "invalid_count": 0,
+      "validity_definition": "All required values are finite and electrical values satisfy the software bounds; this is not field validation.",
+      "power_consistency_error_w": {
+        "mean": 0.5569360000000001,
+        "p95": 1.1000000000000014,
+        "max": 1.2000000000000028,
+        "above_0_11_w_count": 4233
+      },
+      "legacy_proxy_energy": {
+        "trace_cycle_max_cumulative_wh_in_sample": 3474.3708733044755,
+        "integrated_interval_count_in_sample": 4967,
+        "interpretation": "Trapezoidal integral of the transformed CSV replay payload's legacy V\u00d7I field. This is workload context; the archived field-trace energy is calculated separately and no direct kWh-meter or power-factor channel is included."
+      },
+      "occupancy": {
+        "occupied_count": 4748,
+        "unoccupied_count": 252,
+        "people_count_mean": 3.085,
+        "people_count_max": 5
+      }
+    },
+    "architecture_comparison": {
+      "edge_cloud_p95_ms": 0.2015583,
+      "cloud_only_p95_ms": 64.67971621997859,
+      "configured_p95_latency_reduction_percent": 99.6883747923159,
+      "network_offload_rate": 0.9772,
+      "network_payload_bytes_edge_cloud": 249196,
+      "network_payload_bytes_cloud_only": 10921340,
+      "network_payload_bytes_avoided": 10672144,
+      "network_payload_reduction_rate": 0.977182653410662,
+      "comparison_basis": "Same replay sample, local processing, serialized payloads, seed, and configured network draws. This is a controlled emulation comparison, not a measured public-cloud trial."
+    },
+    "field_trace_energy": {
+      "method": "trapezoidal_integration_of_recorded_legacy_v_times_i_power",
+      "timestamp_basis": "exported_workbook_timestamp",
+      "measurement_role": "archived_physical_sensor_trace",
+      "max_gap_seconds": 10.0,
+      "trace_cycle_rows": 92160,
+      "integrated_intervals": 91488,
+      "excluded_intervals": 672,
+      "energy_wh": 3355.3171338859797,
+      "trace_cycle_energy_legacy_wh": 3355.3171338859797,
+      "active_energy_ground_truth": false,
+      "interpretation": "Derived from the recorded legacy V\u00d7I power field. It is a reproducible monitoring indicator, not a direct kWh-meter channel or an active-energy measurement with recorded power-factor evidence."
+    },
+    "replay_payload_energy": {
+      "method": "trapezoidal_integration_of_recorded_legacy_v_times_i_power",
+      "timestamp_basis": "exported_workbook_source_timestamp",
+      "measurement_role": "historical_replay_payload",
+      "max_gap_seconds": 10.0,
+      "trace_cycle_rows": 92160,
+      "integrated_intervals": 91488,
+      "excluded_intervals": 672,
+      "energy_wh": 3474.3708733044755,
+      "trace_cycle_energy_legacy_wh": 3474.3708733044755,
+      "active_energy_ground_truth": false,
+      "interpretation": "Derived from the transformed CSV replay payload. It supports the replay API and workload demonstration only; the field-trace energy is calculated separately from the exported XLSX. The cumulative value resets for each replay cycle."
+    },
+    "occupancy": {
+      "occupied_sample_count": 4748,
+      "unoccupied_sample_count": 252,
+      "people_count_sample_mean": 3.085,
+      "people_count_sample_max": 5
     }
-  }
+  },
+  "digital_twin": {
+    "representation_class": "monitoring_oriented_one_way_prototype",
+    "synchronization_mode": "request_driven_historical_replay",
+    "supported_views": [
+      "geospatial_site",
+      "building",
+      "indoor"
+    ],
+    "application_lod": [
+      {
+        "lod_id": "LoD-A",
+        "view": "geospatial_site",
+        "scale": "site",
+        "detail": "macro geospatial context, legacy coordinate, and edge-cloud relation"
+      },
+      {
+        "lod_id": "LoD-B",
+        "view": "building",
+        "scale": "building",
+        "detail": "building-level monitoring summary, energy, occupancy, and routing"
+      },
+      {
+        "lod_id": "LoD-C",
+        "view": "indoor",
+        "scale": "indoor",
+        "detail": "detailed indoor 3D scene, sensor state, and occupancy indicator"
+      }
+    ],
+    "lod_transition": "manual_view_selection",
+    "geospatial_reference": {
+      "latitude": -7.723,
+      "longitude": 110.5187,
+      "crs": "EPSG:4326",
+      "verification_status": "legacy_coordinate_not_survey_validated"
+    },
+    "scale_semantics": "three project-defined application LoD levels: LoD-A geospatial site, LoD-B building, and LoD-C indoor 3D; conformance to CityGML, IndoorGML, IFC, or 3D Tiles geometric LoD has not been evaluated",
+    "data_direction": "physical_or_replayed_source_to_digital_representation_only"
+  },
+  "excluded_claims": [
+    "model accuracy or prediction precision",
+    "recomputed calibration error against the PLN kWh meter, because interval readings are not stored in this repository",
+    "active-power or power-factor measurement beyond the legacy V\u00d7I signal",
+    "survey-validated geospatial coordinates or standards-certified LOD",
+    "measured public-cloud latency",
+    "2,027,520 independent field observations",
+    "2,027,520 messages benchmarked or load-tested",
+    "raw equality between the replay CSV and exported workbook",
+    "operational bidirectional Digital Twin validation"
+  ]
 }

@@ -1,135 +1,184 @@
-# Metodologi penelitian yang diperbarui
+# Metodologi evaluasi kinerja Digital Twin edge–cloud multiskala
 
 ## Posisi penelitian
 
-Judul kerja yang disarankan:
+> **Evaluasi Kinerja Digital Twin Edge–Cloud Multiskala untuk Monitoring
+> Energi dan Okupansi**
 
-> **Arsitektur Edge-Cloud untuk Estimasi Daya Near Real-Time Bangunan Cerdas
-> Terintegrasi Digital Twin Web-3D: Evaluasi Berbasis Data Sintetis
-> Terkalibrasi**
-
-Penelitian ini adalah evaluasi berbasis simulasi yang dikalibrasi menggunakan
-satu trace sensor nyata. Penelitian **bukan** eksperimen operasional pada banyak
-bangunan, bukan validasi public cloud, dan bukan pengukuran perangkat Raspberry
-Pi baru. Batas ini harus dinyatakan pada abstrak, metode, hasil, dan kesimpulan.
+Penelitian mengevaluasi arsitektur dengan memutar ulang telemetry historis.
+Istilah *near real-time* mengacu pada kemampuan jalur pemrosesan memenuhi
+deadline operasional terkonfigurasi 3,5 detik. Angka ini adalah pembulatan
+median interval trace asli 3,5251918 detik, bukan interval publish nominal
+firmware dan bukan kebaruan waktu observasi sumber.
 
 ## Pertanyaan penelitian
 
-1. Seberapa baik estimator mengoreksi galat observasi daya pada skenario
-   sintetis terkalibrasi dibandingkan baseline `tegangan × arus`?
-2. Berapa latensi komputasi dan throughput inference pada lingkungan uji yang
-   disebutkan secara eksplisit?
-3. Bagaimana perubahan asumsi jaringan memengaruhi latensi end-to-end
-   edge-cloud pada emulasi terkontrol?
-4. Dapatkah hasil estimasi dan provenance disajikan konsisten pada Digital Twin
-   Web-3D?
+1. Apakah pemeriksaan software, integrasi energi trace sensor dan payload replay, routing, dan serialisasi
+   dapat diproses di bawah deadline konfigurasi 3,5 detik?
+2. Bagaimana distribusi routing pada sampel replay, serta apakah cabang nilai
+   hilang/non-finite, pembacaan listrik invalid, arus di bawah threshold
+   firmware, dan daya di atas P99 tercakup oleh replay atau unit test?
+3. Bagaimana kinerja arsitektur edge–cloud selektif dibandingkan baseline
+   cloud-only pada workload dan profil jaringan terkonfigurasi yang sama?
+4. Dapatkah setiap payload ditelusuri ke blok replay dan posisi ancestry pada
+   trace sumber serta divisualisasikan konsisten pada skala tapak, bangunan,
+   dan indoor?
+5. Bagaimana energi turunan dan status okupansi disajikan dengan membedakan
+   telemetry sensor lapangan, payload replay, dan bukti pembandingan meter?
 
-## Pemetaan judul terhadap bukti eksperimen
+## Pemetaan judul terhadap bukti
 
-| Unsur judul | Bukti dan sumber data |
+| Unsur judul | Bukti |
 |---|---|
-| Arsitektur Edge-Cloud | Benchmark inference, serialisasi, routing edge/cloud, dan emulasi jaringan |
-| Estimasi daya | Ridge dan baseline diuji pada skenario sintetis dengan `true_power_w` |
-| Near real-time | P50/P95/P99, throughput, dan deadline miss terhadap interval 3,5 detik |
-| Bangunan cerdas | Variabel lingkungan, kelistrikan, okupansi, serta gangguan sensor terkalibrasi |
-| Digital Twin Web-3D | Kontrak telemetry, replay API, provenance, dan dashboard Babylon.js |
-| Evaluasi sintetis terkalibrasi | Generator dikalibrasi dari trace asli dan diuji pada skenario/run tertahan |
+| Arsitektur edge–cloud | aturan routing, hitungan jalur, pemrosesan lokal, dan profil jaringan terkonfigurasi |
+| Monitoring energi | telemetry sensor lapangan, V×I hasil hitung ulang, integral XLSX asli, integral payload replay, dan batas metrologinya |
+| Monitoring okupansi | jumlah orang legacy serta status occupied/unoccupied |
+| Near real-time | P50/P95/P99, throughput, freshness proxy, dan deadline miss |
+| Bangunan cerdas | telemetry suhu, kelembapan, listrik, dan okupansi dari arsitektur ESP32–Raspberry Pi; `DeviceID` merepresentasikan gateway |
+| Visualisasi geospasial–indoor multiskala | satu payload pada skala tapak EPSG:4326, bangunan, dan indoor Babylon |
+| Digital Twin | prototipe monitoring satu arah: skema JSON, replay API, provenance, grafik, dan model 3D |
+| Replay data historis | 22 pengulangan deterministik blok turunan dengan `replay_id`, `source_row_id`, dan dua timestamp |
 
-## Sumber data dan batasannya
+## Sumber data
 
-Trace asli adalah workbook
-`Data/sensor_data_export_2026-05-17_to_2026-05-23.xlsx`, berisi 92.160 baris
-dari satu `device_id`. Waktu aktual di dalam file hanya sekitar empat hari.
-Firmware lama menghitung daya sebagai `tegangan × arus` tanpa sensor faktor
-daya. Karena itu variabel tersebut diperlakukan sebagai daya semu legacy,
-meskipun nama kolom historis menggunakan watt.
+Trace asli
+`Data/sensor_data_export_2026-05-17_to_2026-05-23.xlsx` berisi 92.160 baris
+dengan satu **ID gateway** dan periode aktual sekitar empat hari. Arsitektur
+fisiknya mencakup ESP32 sebagai node akuisisi tegangan, arus, suhu, dan
+kelembapan serta Raspberry Pi sebagai gateway agregasi dan jalur okupansi.
+Pipeline penyimpanan lama meratakan telemetry tersebut di bawah
+`RASPBERRY_PI_GATEWAY_001`; karena itu `DeviceID` bukan ID node sumber per
+record dan tidak boleh dibaca sebagai bukti hanya ada satu perangkat fisik. CSV
+`Data/sensor_data.csv` berisi 2.027.520 baris, tepat 22 kali ukuran trace
+sumber. Pemeriksaan seluruh payload membuktikan bahwa semua 22 blok identik
+satu sama lain pada `DeviceID` dan enam variabel sensor. Namun, blok pertama
+berbeda dari XLSX pada 2 suhu, 2 kelembapan, 2.811 tegangan, 1.178 arus, 2.812
+daya, dan 79.280 nilai okupansi. Oleh karena itu CSV diposisikan sebagai
+**replay deterministik dari blok historis turunan yang telah
+ditransformasi**, bukan salinan mentah, data augmented yang memberi keragaman,
+atau observasi independen. Script transformasi legacy tidak tersedia.
 
-CSV 2.027.520 baris adalah artefak augmentasi lama yang setara dengan 22 replay
-trace asli. Baris tersebut bukan observasi independen dan tidak digunakan untuk
-training, validation, atau test akurasi model. Posisi resminya adalah
-**workload replay arsitektur** dengan `source_type=legacy_augmented_replay`.
-Sampel yang tersebar pada seluruh blok digunakan untuk benchmark inference,
-serialisasi, routing, dan throughput.
+Firmware menghitung kolom daya dengan V×I dan tidak mengukur faktor daya.
+Karena itu sistem melaporkannya sebagai `power_legacy_w`. Nilai
+`power_formula_w` adalah hasil hitung ulang V×I untuk pemeriksaan konsistensi,
+bukan estimasi ML.
 
-## Pembentukan data sintetis
+Energi dihitung pada satu siklus trace menggunakan integral trapesium:
 
-Generator memiliki dua lapisan:
+`Eᵢ = ((Pᵢ₋₁ + Pᵢ) / 2) × Δt / 3600`
 
-1. **Keadaan laten:** waktu, okupansi, kondisi termal, kelembapan, status beban,
-   tegangan sebenarnya, arus sebenarnya, dan daya sebenarnya.
-2. **Observasi sensor:** noise, kuantisasi DHT, threshold arus 0,1 A,
-   validasi tegangan 150–300 V, dropout, packet loss, dan jitter timestamp.
+dengan satuan Wh. Interval hanya diintegrasikan bila timestamp valid,
+`0 < Δt ≤ 10 detik`, serta kedua nilai daya finite dan non-negatif. Nilai
+kumulatif di-reset pada awal setiap siklus replay. Karena `P` adalah proksi
+legacy V×I tanpa faktor daya, hasil energi merupakan **indikator energi
+legacy**. Peneliti melaporkan perbandingan perangkat terhadap meter kWh PLN,
+tetapi pasangan pembacaan meter awal–akhir tidak tersedia di repositori untuk
+menghitung galat kalibrasi secara reproduktif.
 
-Setiap baris membawa `scenario_id`, `run_id`, `seed`, `source_type`, serta
-pasangan kolom `true_*` dan `observed_*`. `device_id` tetap satu karena memang
-merepresentasikan gateway lama; variasi eksperimen dinyatakan melalui skenario
-dan run, bukan identitas perangkat palsu.
+## Rekonstruksi provenance
 
-## Validasi sintetis
+Pipeline membaca seluruh 2.027.520 baris secara chunked. Setiap payload
+dibandingkan dengan posisi modulo pada blok pertama; blok pertama kemudian
+dibandingkan per kolom dengan 92.160 baris XLSX. Untuk setiap posisi CSV:
 
-Pemeriksaan mencakup kuantil, proporsi nol, autokorelasi lag-1, packet loss, dan
-perbandingan per skenario. Kesesuaian statistik hanya menunjukkan kalibrasi,
-bukan membuktikan data sintetis sebagai data nyata. Parameter dan seed wajib
-dilaporkan.
+- `replay_block_id = floor(legacy_row_index / 92.160)`;
+- `source_row_index = legacy_row_index mod 92.160`;
+- `replay_id` mengidentifikasi satu dari 22 blok;
+- `source_row_id` menyatakan ancestry berdasarkan posisi, bukan jaminan
+  kesamaan nilai dengan XLSX;
+- `source_timestamp_utc` menyimpan waktu observasi asli;
+- `replay_timestamp_utc` menyimpan waktu yang berada pada CSV replay.
 
-## Evaluasi estimator
+Sebanyak 5.000 posisi unik dipilih merata pada seluruh file untuk benchmark
+default. Pemilihan ini memberi cakupan seluruh blok tanpa menganggap replay
+sebagai replikasi statistik independen. Jadi, 2.027.520 adalah jumlah baris
+yang dipindai untuk audit, sedangkan 5.000 adalah jumlah pesan yang melewati
+benchmark. Eksperimen ini bukan stress/load test dua juta pesan dan server
+replay default juga memuat sampel 5.000 baris.
 
-Target adalah `true_power_w`. Kandidat:
+## Pemrosesan dan routing
 
-- konstanta median train;
-- baseline firmware `observed_voltage_v × observed_current_a`;
-- Ridge;
-- Random Forest.
+Setiap pesan melalui langkah berikut:
 
-Pemisahan dilakukan berdasarkan skenario: `normal` dan `hot_busy` untuk
-training, `humid_unstable` untuk validation, serta `cool_low_load` dan
-`sensor_degraded` sebagai test yang benar-benar ditahan. Setiap skenario
-mempunyai empat run 24 jam dengan seed berbeda. Tidak ada random row split.
-Model dipilih menggunakan MAE validation; test tidak digunakan untuk seleksi.
-Metrik utama MAE, RMSE, dan R² dilaporkan per skenario dan per run, disertai
-95% confidence interval antarrun.
+1. konversi dan pemeriksaan nilai non-finite;
+2. validasi pembacaan tegangan, arus, dan daya;
+3. hitung ulang `round(V×I, 1)` serta galat konsistensi;
+4. petakan energi interval/kumulatif serta status okupansi;
+5. routing ke cloud bila pembacaan invalid, arus di bawah threshold legacy
+   0,1 A, atau daya legacy melampaui 42,6 W (P99 trace asli);
+6. pembentukan dan serialisasi payload JSON.
 
-Workbook asli tidak mempunyai ground truth daya independen karena kolom dayanya
-juga berasal dari `V × I`. Karena itu akurasi terhadap `true_power_w` hanya
-dapat dievaluasi pada domain sintetis. Workbook asli digunakan untuk kalibrasi
-dan pemeriksaan statistik, bukan untuk mengklaim akurasi lapangan.
+Pesan lain tetap pada jalur edge. Routing cloud adalah keputusan arsitektur
+untuk pemeriksaan lanjutan, bukan bukti bahwa public cloud benar-benar
+dihubungi.
 
-## Evaluasi arsitektur
+## Metrik
 
-Input workload arsitektur berasal dari CSV augmented 2.027.520 baris. Pipeline
-mengaudit jumlah baris, jumlah replay, perangkat, rentang waktu, nilai nol, dan
-nilai hilang. Sebanyak 5.000 posisi dipilih merata di seluruh 22 blok untuk
-benchmark latency per-pesan. Pesan dengan tegangan/arus nol atau daya legacy di
-atas 42,6 W (P99 trace kalibrasi) dirutekan ke cloud emulasi; pesan lain
-diproses di edge. Jumlah 2.027.520 hanya menyatakan volume workload replay,
-bukan ukuran sampel statistik untuk akurasi model.
+- latensi pemantauan lokal, serialisasi, dan jalur edge: mean, P50, P95, P99,
+  maksimum;
+- throughput pesan sekuensial pada mesin uji;
+- jumlah edge/cloud dan alasan routing;
+- nilai valid/invalid serta galat konsistensi daya;
+- ukuran payload;
+- latensi end-to-end, drop, dan deadline miss pada profil jaringan
+  terkonfigurasi;
+- pembanding cloud-only dengan pesan, payload, seed, dan draw jaringan yang
+  sama: P50/P95/P99, deadline miss, offload jaringan, dan byte yang dihindari;
+- energi trace XLSX lapangan, energi satu siklus payload replay, serta
+  distribusi status okupansi.
 
-Latensi komputasi diukur dengan monotonic high-resolution clock pada mesin yang
-menjalankan eksperimen. Latensi jaringan berasal dari profil emulasi di
-`configs/experiment.json` dan harus diberi label **configured/emulated**.
-Jangan menyebut hasil itu sebagai pengukuran Azure atau Raspberry Pi.
+Latensi lokal diukur menggunakan `time.perf_counter_ns`. Profil jaringan
+normal dengan median, jitter, dan peluang drop dideklarasikan di konfigurasi.
+Browser render latency tidak termasuk.
 
-Metrik: P50/P95/P99 latensi komputasi, serialisasi, edge-path aktual,
-cloud-path terkonfigurasi, hybrid end-to-end, throughput, ukuran payload,
-routing, drop, dan deadline miss.
+## Digital Twin geospasial–indoor multiskala
 
-## Digital Twin Web-3D
+API mengirim `source_type`, blok/baris sumber, dua timestamp, energi, okupansi,
+nilai monitoring, konteks tiga skala, klasifikasi lineage, status, rute,
+latensi, dan freshness. Kontrak sengaja
+tidak memiliki objek `estimate`, `model_name`, skenario sintetis, atau metrik
+akurasi. Dashboard menampilkan tiga skala yang memakai payload sama:
 
-Web-3D menerima kontrak `schemas/telemetry.schema.json`. UI harus menampilkan
-sumber data (`synthetic_calibrated`, `legacy_augmented_replay`,
-`real_trace_replay`, atau `live_sensor`), nama model, scope model, nilai
-observasi, serta estimasi. Mode sintetis digunakan untuk membaca hasil ilmiah
-model, sedangkan mode augmented digunakan untuk demonstrasi workload replay.
-Digital Twin adalah lapisan visualisasi dan integrasi; keberadaannya tidak
-membuktikan ketepatan model atau performa cloud.
+1. **LoD-A, tapak geospasial**—marker koordinat legacy EPSG:4326 dan hubungan
+   edge–cloud;
+2. **LoD-B, bangunan**—ringkasan energi, okupansi, serta aliran
+   sensor–edge–API;
+3. **LoD-C, indoor**—scene glTF/Babylon dengan indikator sensor, rute, dan
+   orang.
+
+Ketiganya merupakan hirarki **application-level LoD** dengan granularitas
+informasi yang meningkat dan perpindahan level melalui pilihan tampilan
+manual. Implementasi belum mengonversi IFC/CityGML/IndoorGML atau menguji
+kepatuhan LoD geometrik/tileset formal; koordinat legacy juga belum
+diverifikasi survei.
+
+Integrasi saat ini hanya dari replay API ke tampilan. Tidak ada perintah balik
+dari representasi digital ke perangkat fisik. Berdasarkan definisi Digital
+Twin versus Digital Shadow pada literatur, implementasi ini dinilai sebagai
+prototipe Digital Twin berorientasi monitoring/digital shadow, bukan Digital
+Twin operasional dua arah.
 
 ## Ancaman validitas
 
-- hanya satu trace pendek dan satu gateway;
-- tidak ada ground truth daya aktif atau faktor daya pada data nyata;
-- beberapa nol dapat bercampur antara kondisi beban dan kegagalan sensor;
-- okupansi berasal dari alur berbeda dan banyak nilai hilang;
-- dinamika sintetis bergantung pada asumsi generator;
-- workload augmented adalah replay, bukan variasi lapangan tambahan;
-- benchmark lokal tidak mewakili hardware edge produksi;
-- emulasi jaringan tidak mewakili SLA public cloud.
+- satu trace, satu ID gateway, dan periode pendek; workbook tidak menyimpan ID
+  sumber per node untuk memisahkan kontribusi ESP32 dan Raspberry Pi;
+- tidak ada kanal faktor daya atau pembacaan kWh langsung pada arsip telemetry;
+- perbandingan perangkat dengan meter kWh PLN dilaporkan oleh peneliti, tetapi
+  interval pembandingnya belum tersedia untuk menghitung galat;
+- integral energi mewarisi keterbatasan proksi V×I dan gap timestamp;
+- nilai nol mencampur kemungkinan beban rendah dan kondisi sensor;
+- okupansi banyak bernilai nol dan berasal dari alur berbeda;
+- sensor okupansi legacy tidak divalidasi ulang terhadap ground truth;
+- perubahan pada CSV lama tidak seluruhnya dapat direkonstruksi dari script
+  transformasi yang hilang; audit hanya membuktikan perbedaannya;
+- 22 replay bukan 22 eksperimen lapangan independen;
+- benchmark hanya memproses sampel 5.000 dari 2.027.520 baris yang dipindai;
+- data final tidak mencakup cabang invalid, non-finite, dan arus rendah;
+- benchmark lokal tidak mewakili perangkat edge produksi;
+- jaringan diemulasi dan tidak mewakili SLA public cloud;
+- baseline cloud-only juga merupakan kontrafaktual terkonfigurasi;
+- API bergerak satu baris per permintaan, bukan memakai replay clock sumber;
+- koordinat dan perpindahan skala belum diuji terhadap data survei atau
+  standar geospasial/indoor;
+- Digital Twin menunjukkan integrasi/visualisasi satu arah, bukan validasi
+  fisik gedung atau performa render browser.

@@ -153,9 +153,23 @@
       "people_count": 1.0
     }
   },
+  "derived_energy": {
+    "method": "trapezoidal_integration_of_recorded_legacy_v_times_i_power",
+    "timestamp_basis": "exported_workbook_timestamp",
+    "measurement_role": "archived_physical_sensor_trace",
+    "max_gap_seconds": 10.0,
+    "trace_cycle_rows": 92160,
+    "integrated_intervals": 91488,
+    "excluded_intervals": 672,
+    "energy_wh": 3355.3171338859797,
+    "trace_cycle_energy_legacy_wh": 3355.3171338859797,
+    "active_energy_ground_truth": false,
+    "interpretation": "Derived from the recorded legacy V\u00d7I power field. It is a reproducible monitoring indicator, not a direct kWh-meter channel or an active-energy measurement with recorded power-factor evidence."
+  },
   "limitations": [
-    "Trace berasal dari satu device_id dan satu periode sekitar empat hari.",
-    "Daya pada firmware lama dihitung sebagai tegangan dikali arus; faktor daya tidak diukur.",
+    "Trace memakai satu device_id yang berfungsi sebagai label gateway agregasi Raspberry Pi; ID ini tidak mengidentifikasi atau menghitung setiap node sensor fisik.",
+    "Arsitektur legacy menggabungkan akuisisi ESP32 dan alur gateway/okupansi Raspberry Pi, tetapi workbook tidak menyimpan source-node ID per baris.",
+    "Firmware lama merekam sensor tegangan dan arus fisik, lalu menghitung daya sebagai tegangan dikali arus; faktor daya tidak direkam.",
     "Nilai nol dapat berarti beban mati, threshold sensor, atau kegagalan pembacaan.",
     "Jumlah orang berasal dari alur penyimpanan terpisah dan memiliki nilai hilang."
   ]

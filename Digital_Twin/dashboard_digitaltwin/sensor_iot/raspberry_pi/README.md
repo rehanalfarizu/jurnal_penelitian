@@ -1,5 +1,9 @@
 # Raspberry Pi People Counter
 
+> **Status:** snapshot legacy untuk menjelaskan asal variabel okupansi. Modul
+> ini tidak dipanggil oleh pipeline replay aktif dan belum diuji ulang dengan
+> kamera/perangkat pada evaluasi sekarang.
+
 ## Overview
 
 Sistem people detection menggunakan USB webcam dan YOLO v3-tiny untuk menghitung jumlah orang dalam ruangan.
@@ -33,7 +37,8 @@ scp requirements.txt [user]@[raspberry_pi_ip]:~/
 
 ```bash
 ssh [user]@[raspberry_pi_ip]
-pip3 install -r requirements.txt
+sudo apt install python3-opencv
+pip3 install flask flask-cors numpy paho-mqtt waitress azure-iot-device
 ```
 
 ### 3. Verifikasi Webcam

@@ -6,10 +6,12 @@
 
 - Baris data: 2.027.520
 - SHA-1 lokal: `85d9b1b16726fe0adff1cc196f0ca088fb11ed7c`
-- Device ID: satu nilai dominan/eksklusif,
-  `RASPBERRY_PI_GATEWAY_001`
+- Gateway ID: satu nilai dominan/eksklusif,
+  `RASPBERRY_PI_GATEWAY_001`. Nilai ini adalah label gateway pengumpul
+  Raspberry Pi, bukan bukti bahwa hanya ada satu perangkat sensor fisik.
 - Rentang timestamp: 23 Februari–24 Mei 2026
-- Status: **data augmented**, bukan data primer
+- Status: **artefak turunan legacy yang dipakai sebagai replay historis**,
+  bukan data primer
 
 Pemilik penelitian menyatakan bahwa file ini diperluas dari dataset asli
 sekitar 93 ribu baris menjadi sekitar 2 juta baris.
@@ -21,8 +23,9 @@ sekitar 93 ribu baris menjadi sekitar 2 juta baris.
 - Baris data: 92.160
 - SHA-1 lokal: `e96ef3b4f467d0ada07090778b8a42cce1a77275`
 - Sheet: `Sensor Data`
-- Kolom: 8, sama dengan CSV augmented
-- Device ID: `RASPBERRY_PI_GATEWAY_001`
+- Kolom: 8, sama dengan CSV replay turunan (pada dokumentasi lama disebut
+  “augmented”)
+- Gateway ID: `RASPBERRY_PI_GATEWAY_001` (label agregasi Raspberry Pi)
 - Rentang timestamp aktual: 19 Mei 2026 17:10:55 UTC sampai
   23 Mei 2026 18:22:06 UTC
 - Semua 92.160 timestamp unik dan terurut
@@ -30,7 +33,15 @@ sekitar 93 ribu baris menjadi sekitar 2 juta baris.
 
 Nama file menyebut 17–23 Mei, tetapi record di dalamnya baru dimulai pada
 19 Mei. Workbook ini merupakan kandidat data primer yang dikonfirmasi oleh
-pemilik penelitian.
+pemilik penelitian. Menurut pemilik penelitian, telemetry berasal dari dua
+peran perangkat fisik: ESP32 mengakuisisi sensor tegangan, arus, suhu, dan
+kelembapan; Raspberry Pi menjalankan peran gateway agregasi serta alur
+okupansi/kamera. Pipeline penyimpanan lama menuliskan seluruh record dengan ID
+gateway Raspberry Pi, sehingga ID tersebut tidak dapat dipakai untuk memisahkan
+node sumber per baris. Hasil akumulasi perangkat pernah dibandingkan dengan
+pembacaan meter kWh PLN. Nilai meter awal–akhir beserta timestamp interval
+belum tersedia di repositori, sehingga pipeline tidak mengklaim atau menghitung
+galat kalibrasi.
 
 Masalah kualitas yang harus ditangani secara eksplisit:
 
@@ -44,9 +55,9 @@ Masalah kualitas yang harus ditangani secara eksplisit:
 Nilai nol tidak boleh langsung diganti tanpa membedakan kondisi perangkat
 mati, sensor gagal, komunikasi gagal, dan konsumsi yang benar-benar nol.
 
-## Hubungan data asli dan augmented
+## Hubungan data asli dan workload replay turunan
 
-Ukuran CSV augmented tepat 22 kali ukuran workbook:
+Ukuran CSV replay turunan tepat 22 kali ukuran workbook:
 
 `2.027.520 = 92.160 × 22`
 
@@ -60,11 +71,14 @@ Perbandingan posisional seluruh baris menunjukkan:
 - daya sama pada 96,95% baris;
 - jumlah orang hanya sama pada 13,98% baris.
 
-CSV augmented terdiri dari 22 replay/pengulangan berurutan dataset asli.
+CSV replay turunan terdiri dari 22 replay/pengulangan deterministik satu blok
+turunan; seluruh tujuh payload non-timestamp identik antarpengulangan.
 Timestamp setiap blok digeser sehingga rentangnya menjadi Februari–Mei 2026,
 termasuk tanggal sebelum pengukuran asli. Perubahan terutama terjadi pada
 nilai listrik nol dan jumlah orang. Dengan demikian, 2.027.520 baris tersebut
-tidak boleh diperlakukan sebagai observasi lapangan independen.
+tidak boleh diperlakukan sebagai observasi lapangan independen, keragaman
+augmentasi, maupun salinan mentah XLSX. `source_row_id` yang direkonstruksi
+pipeline adalah ancestry posisional dan bukan bukti kesamaan nilai.
 
 ## Temuan dari riwayat Git
 
@@ -84,45 +98,58 @@ Riwayat dokumentasi juga pernah menyebut sumber Azure sebanyak sedikitnya
 240.087 baris. Klaim tersebut belum dapat direkonsiliasi dengan pernyataan
 dataset asli sekitar 93 ribu.
 
-## Berkas yang masih dibutuhkan
+## Jika transformasi data diaktifkan kembali
 
-Sebelum eksperimen baru, tambahkan:
+Bagian ini adalah daftar kebutuhan provenance untuk rekonstruksi transformasi
+legacy, bukan langkah pipeline aktif:
 
-1. ekspor data primer yang lebih baru jika sumber Azure masih tersedia;
-2. script pembersihan data primer dengan audit alasan setiap record dibuang
+1. script pembersihan data primer dengan audit alasan setiap record dibuang
    atau ditandai;
-3. script augmentasi baru hanya jika augmentasi memang dibutuhkan;
-4. seed random dan seluruh parameter augmentasi;
-5. mapping setiap baris augmented ke baris/waktu sumber;
-6. catatan perangkat, lokasi, periode, interval sampling, dan satuan;
-7. checksum untuk setiap snapshot data mentah dan data turunannya.
+2. seed dan seluruh parameter jika augmentasi/simulasi baru benar-benar
+   digunakan;
+3. mapping setiap baris turunan ke baris/waktu sumber;
+4. catatan perangkat, lokasi, periode, interval sampling, dan satuan;
+5. checksum untuk setiap snapshot data mentah dan data turunannya.
 
-## Aturan evaluasi
+Ekspor data primer yang lebih baru tetap bermanfaat bila sumber Azure suatu
+saat tersedia, tetapi tidak menjadi prasyarat untuk mereproduksi evaluasi
+replay sekarang.
 
-- Split train/validation/test harus dilakukan pada data asli terlebih dahulu.
-- Augmentasi hanya boleh diterapkan pada bagian training.
-- Validation dan test harus tetap berupa observasi asli yang tidak
-  diaugmentasi.
-- Baris turunan dari satu observasi sumber tidak boleh tersebar antara train
-  dan test.
-- Dataset augmented digunakan oleh pipeline sebagai workload replay untuk
-  stress test throughput, latency, routing, dan integrasi Digital Twin Web-3D.
-- Pipeline memberi label `legacy_augmented_replay`, merekonstruksi
+## Aturan replay aktif
+
+- Workload replay turunan dipindai seluruhnya oleh pipeline untuk audit
+  lineage dan kualitas, lalu digunakan sebagai sumber sampel replay untuk
+  throughput, latency, routing, energi payload replay, okupansi, dan integrasi
+  visual tapak–bangunan–indoor.
+- Pipeline memberi label `historical_replay`, merekonstruksi
   `replay_block_id` dan `source_row_index`, serta mengambil sampel yang tersebar
   merata pada seluruh 22 blok.
 - Jumlah 2.027.520 harus dilaporkan sebagai volume workload replay, bukan
   sebagai jumlah observasi lapangan independen.
-- Dataset augmented tetap dilarang untuk train, validation, dan test akurasi
-  model final.
+- Benchmark default hanya memproses 5.000 pesan; jangan menyebutnya stress
+  test atau load test 2.027.520 pesan.
+- Pipeline aktif tidak melakukan train, validation, test, atau evaluasi
+  akurasi model.
+- Energi trace lapangan dihitung langsung dari XLSX asli dengan integral
+  trapesium daya legacy V×I terhadap timestamp sumber. Energi satu blok CSV
+  replay dihitung terpisah untuk payload/API; keduanya tidak diperlakukan
+  sebagai pembacaan langsung kanal kWh atau bukti galat kalibrasi tanpa
+  pasangan pembacaan meter PLN per interval.
+
+Jika penelitian kelak kembali memakai machine learning, barulah split
+train/validation/test dilakukan pada data asli sebelum augmentasi; baris
+turunan dari satu observasi sumber tidak boleh tersebar antara training dan
+validation/test. Ketentuan ini tidak dijalankan oleh pipeline aktif.
 
 ## Konteks dari firmware lama
 
-Audit `/Users/macbookpro/Documents/dashboard_digitaltwin/sensor iot/src/main.cpp`
-menunjukkan bahwa firmware:
+Snapshot firmware yang disimpan di
+`Digital_Twin/dashboard_digitaltwin/sensor_iot/esp32_main.cpp` menunjukkan
+bahwa firmware:
 
 - mengirim telemetry nominal setiap 5 detik;
 - menghitung daya sebagai `tegangan × arus`;
-- mengubah tegangan di luar 150–300 V menjadi tidak valid/nol;
+- mengubah tegangan di luar 100–300 V menjadi tidak valid/nol;
 - menganggap arus di bawah 0,1 A sebagai nol;
 - mempunyai field status sensor yang tidak ikut dipertahankan dalam workbook.
 
@@ -132,36 +159,3 @@ untuk memprediksi target daya yang memang dihitung dari dua nilai tersebut.
 
 Audit workspace lama yang lebih lengkap tersedia di
 `../LEGACY_PROJECT_AUDIT.md`.
-
-## Diagnosis baseline pada data asli
-
-Audit 28 Juli 2026 menggunakan split kronologis 70% train, 15% validation,
-dan 15% test. Hasil test:
-
-| Baseline/model | Fitur | R² | MAE |
-|---|---|---:|---:|
-| Mean data train | konstanta | -2,930 | 3,652 W |
-| Ridge | suhu, kelembapan, okupansi, waktu | -9,908 | 6,605 W |
-| HistGradientBoosting | suhu, kelembapan, okupansi, waktu | -6,094 | 4,726 W |
-| Persistence | daya sebelumnya | 0,741 | 0,410 W |
-| Rolling mean 10 sampel | riwayat daya | 0,839 | 0,380 W |
-| Rumus fisika | tegangan × arus | 0,909 | 0,541 W |
-| HistGradientBoosting | tegangan, arus | 0,875 | 0,608 W |
-
-Test hanya memiliki simpangan baku daya sekitar 2,10 W. Train mempunyai mean
-34,90 W dan memuat seluruh 2.812 nilai daya nol, sedangkan test mempunyai mean
-38,49 W tanpa nilai nol. Pergeseran distribusi ini membuat R² sangat sensitif.
-
-Korelasi terhadap daya pada seluruh data:
-
-- tegangan: 0,935;
-- arus: 0,565;
-- jumlah orang: 0,195;
-- suhu: -0,169;
-- kelembapan: -0,187.
-
-Artinya, model berbasis kondisi lingkungan tidak memiliki sinyal yang cukup
-untuk menjelaskan daya saat ini. Augmentasi baris tidak dapat memperbaiki
-ketiadaan fitur kausal. Jika tegangan dan arus tersedia, `P = V × I` harus
-menjadi baseline utama; model ML wajib menunjukkan manfaat di atas baseline
-fisika tersebut.

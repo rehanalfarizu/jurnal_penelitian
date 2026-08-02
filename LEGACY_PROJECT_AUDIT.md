@@ -1,5 +1,9 @@
 # Audit Workspace Lama `dashboard_digitaltwin`
 
+> **Status:** dokumen provenance historis. Rekomendasi data sintetis pada
+> bagian akhir tidak menjadi metode aktif. Lihat `docs/METHODOLOGY.md` dan
+> `AUDIT_RESULTS.md` untuk keputusan penelitian mutakhir.
+
 Sumber yang diperiksa secara read-only:
 
 `/Users/macbookpro/Documents/dashboard_digitaltwin`
@@ -19,24 +23,29 @@ mengapa prediksi daya dari tegangan/arus bersifat sirkular.
 
 ## Firmware dan data contract
 
-Firmware canonical lama:
+Snapshot firmware yang tersalin ke repositori penelitian:
 
-`sensor iot/src/main.cpp`
+`Digital_Twin/dashboard_digitaltwin/sensor_iot/esp32_main.cpp`
 
 Karakteristik penting:
 
 - perangkat ESP32;
-- DHT11 pada GPIO 25;
-- ZMPT101B pada GPIO 35;
+- DHT11 pada GPIO 14;
+- ZMPT101B didefinisikan pada GPIO 34;
 - SCT013 pada GPIO 32;
 - interval publish nominal 5 detik;
-- `VOLTAGE_CALIBRATION = 153.0`;
-- tegangan dianggap valid hanya pada 150–300 V;
+- `VOLTAGE_CALIBRATION = 660.0`;
+- batas bawah tegangan pada snapshot adalah 100 V;
 - `CURRENT_CALIBRATION = 300.0`;
 - arus di bawah 0,1 A dianggap nol;
 - daya dihitung di firmware sebagai `tegangan × arus`;
 - payload mengandung suhu, kelembapan, tegangan, arus, daya, status sensor,
   device ID, dan timestamp UTC.
+
+Snapshot ini berbeda dari parameter yang pernah ditemukan di workspace lama.
+Tidak tersedia hash/version link yang menghubungkan firmware, deployment, dan
+ekspor XLSX pada saat akuisisi. Karena itu file tersebut adalah bukti desain
+legacy, bukan bukti bahwa snapshot persis inilah yang menghasilkan workbook.
 
 Implikasi:
 
@@ -97,9 +106,10 @@ tidak dikalibrasi dari workbook asli dan tidak mempunyai provenance seed.
 
 Karena itu generator sintetis baru harus dibuat dari nol.
 
-## Posisi metodologi data sintetis yang defensible
+## Catatan historis: opsi data sintetis yang tidak dipilih
 
-Data sintetis dapat digunakan bila paper secara eksplisit menyebut
+Bagian berikut merekam opsi yang pernah dipertimbangkan, bukan pipeline aktif.
+Data sintetis hanya dapat digunakan bila paper secara eksplisit menyebut
 **simulation-based evaluation** atau **synthetic workload calibrated from a
 real four-day trace**.
 
@@ -174,7 +184,7 @@ train/test.
 - jangan menyebut hasil laptop/emulator sebagai pengukuran Raspberry Pi atau
   Azure produksi.
 
-## Rekomendasi judul jika data dominan sintetis
+## Judul alternatif historis jika data dominan sintetis
 
 Versi yang lebih aman:
 
@@ -182,6 +192,7 @@ Versi yang lebih aman:
 > Terintegrasi Digital Twin Web-3D: Evaluasi Berbasis Data Sintetis
 > Terkalibrasi
 
-Alternatifnya, pertahankan judul sekarang tetapi nyatakan dengan jelas pada
-abstrak dan metode bahwa evaluasi menggunakan trace nyata empat hari sebagai
-kalibrasi dan workload sintetis untuk eksperimen skala.
+Alternatif ini tidak dipakai. Judul dan pipeline aktif sekarang mengevaluasi
+kinerja Digital Twin edge–cloud untuk monitoring energi–okupansi dengan visual
+tapak–bangunan–indoor multiskala, memakai replay historis turunan tanpa
+estimator dan tanpa generator sintetis.

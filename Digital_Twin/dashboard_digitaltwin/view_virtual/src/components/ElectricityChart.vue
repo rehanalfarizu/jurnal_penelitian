@@ -5,15 +5,14 @@
       :is-dark-mode="isDarkMode"
       icon="⚡"
       icon-type="warning"
-      title="Menunggu Data Listrik"
-      description="Sistem menunggu data dari sensor arus dan tegangan"
+      :title="emptyTitle"
+      :description="`Grafik menunggu ${metricLabel.toLowerCase()} dari API replay historis`"
       :actions="[
-        { icon: '🔌', text: 'Pastikan MQTT broker terhubung' },
-        { icon: '📊', text: 'Periksa koneksi sensor listrik' },
-        { icon: '💡', text: 'Hidupkan beban untuk melihat data' }
+        { icon: '▶️', text: 'Pastikan replay API berjalan' },
+        { icon: '🔗', text: 'Periksa endpoint telemetry lokal' }
       ]"
       :show-status="true"
-      status-text="Menunggu pembacaan sensor..."
+      status-text="Menunggu payload replay..."
       status-class="waiting"
     />
     <Bar
@@ -55,6 +54,18 @@ const props = defineProps({
   isDarkMode: {
     type: Boolean,
     default: false
+  },
+  metricLabel: {
+    type: String,
+    default: 'Daya Legacy (W)'
+  },
+  unitLabel: {
+    type: String,
+    default: 'Daya (Watt)'
+  },
+  emptyTitle: {
+    type: String,
+    default: 'Menunggu Daya Replay'
   }
 })
 
@@ -66,7 +77,7 @@ const chartData = computed(() => ({
   labels: props.data.labels || [],
   datasets: [
     {
-      label: 'Konsumsi Listrik (W)',
+      label: props.metricLabel,
       data: props.data.values || [],
       backgroundColor: 'rgba(52, 152, 219, 0.7)',
       borderColor: '#3498db',
@@ -125,7 +136,7 @@ const chartOptions = computed(() => {
         beginAtZero: true,
         title: {
           display: true,
-          text: 'Daya (Watt)',
+          text: props.unitLabel,
           font: {
             size: 12,
             weight: '600'
@@ -169,8 +180,6 @@ const chartOptions = computed(() => {
   position: relative;
 }
 </style>
-
-
 
 
 

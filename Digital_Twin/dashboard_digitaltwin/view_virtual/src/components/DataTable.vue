@@ -5,16 +5,12 @@
       :is-dark-mode="false"
       icon="📋"
       icon-type="info"
-      title="Belum Ada Data Sensor"
-      description="Dashboard menunggu koneksi dari semua sensor IoT"
+      title="Belum Ada Payload Replay"
+      description="Dashboard menunggu payload dari API replay historis lokal"
       :actions="[
-        { icon: '🔌', text: 'Hubungkan ke MQTT broker' },
-        { icon: '🌡️', text: 'Sensor suhu dan kelembaban' },
-        { icon: '⚡', text: 'Sensor arus dan tegangan' },
-        { icon: '📹', text: 'Kamera people counter' }
+        { icon: '▶️', text: 'Jalankan python -m src.replay.replay_server' },
+        { icon: '🔗', text: 'Periksa VITE_TELEMETRY_API_URL' }
       ]"
-      button-text="Cek Koneksi MQTT"
-      @button-click="checkConnection"
       :show-status="true"
       :status-text="connectionStatus"
       :status-class="connectionClass"
@@ -25,14 +21,18 @@
         <table>
           <thead>
             <tr>
-              <th>Waktu</th>
+              <th>Waktu Sumber (Lokal)</th>
               <th>Suhu (°C)</th>
               <th>Kelembaban (%)</th>
               <th>Tegangan (V)</th>
               <th>Arus (A)</th>
-              <th>Daya Observasi</th>
-              <th>Estimasi Daya</th>
+              <th>Daya Legacy (W)</th>
+              <th>V×I (W)</th>
+              <th>Selisih (W)</th>
+              <th>Energi Siklus (Wh)</th>
               <th>Jumlah Orang</th>
+              <th>Status Okupansi</th>
+              <th>Rute</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -43,9 +43,13 @@
               <td>{{ formatValue(sensorData.humidity) }}</td>
               <td>{{ formatValue(sensorData.voltage) }}</td>
               <td>{{ formatValue(sensorData.current) }}</td>
-              <td>{{ formatValue(sensorData.observedPower) }}</td>
-              <td>{{ formatValue(sensorData.estimatedPower) }}</td>
-              <td>{{ peopleCount }}</td>
+              <td>{{ formatValue(sensorData.legacyPower) }}</td>
+              <td>{{ formatValue(sensorData.formulaPower) }}</td>
+              <td>{{ formatValue(sensorData.powerConsistencyError) }}</td>
+              <td>{{ formatValue(sensorData.energyCumulativeWh, 3) }}</td>
+              <td>{{ formatInteger(peopleCount) }}</td>
+              <td>{{ sensorData.occupancyStatus || '—' }}</td>
+              <td>{{ sensorData.route || '—' }}</td>
               <td>
                 <span class="status-badge" :class="getOverallStatus()">
                   {{ getOverallStatusText() }}
@@ -58,16 +62,16 @@
       
       <div class="table-summary">
         <div class="summary-item">
-          <div class="summary-label">Rata-rata Suhu</div>
+          <div class="summary-label">Suhu Payload Terbaru</div>
           <div class="summary-value">{{ formatValue(sensorData.temperature) }}°C</div>
         </div>
         <div class="summary-item">
-          <div class="summary-label">Integral Estimasi Daya</div>
-          <div class="summary-value">{{ formatEnergy(totalEnergy) }}</div>
+          <div class="summary-label">Waktu Sumber / Replay (Lokal)</div>
+          <div class="summary-value">{{ telemetryTime }}</div>
         </div>
         <div class="summary-item">
-          <div class="summary-label">Sumber / Model</div>
-          <div class="summary-value">{{ sensorData.sourceType }} / {{ sensorData.modelName }}</div>
+          <div class="summary-label">Sumber / Replay</div>
+          <div class="summary-value">{{ sensorData.sourceType }} / {{ sensorData.replayId || 'tidak berlaku' }}</div>
         </div>
       </div>
     </template>
@@ -75,7 +79,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { computed } from 'vue'
 import EmptyState from './EmptyState.vue'
 
 const props = defineProps({
@@ -85,23 +89,22 @@ const props = defineProps({
   },
   peopleCount: {
     type: Number,
-    default: 0
-  },
-  totalEnergy: {
-    type: Number,
-    default: 0
+    default: null
   }
 })
-
-const currentTime = ref(new Date().toLocaleString('id-ID'))
-let timeInterval = null
 
 const hasData = computed(() => props.sensorData.sourceType && props.sensorData.sourceType !== 'unavailable')
 
 const telemetryTime = computed(() => {
-  if (!props.sensorData.timestamp) return currentTime.value
-  const parsed = new Date(props.sensorData.timestamp)
-  return Number.isNaN(parsed.getTime()) ? props.sensorData.timestamp : parsed.toLocaleString('id-ID')
+  const rawTimestamp =
+    props.sensorData.sourceTimestamp ||
+    props.sensorData.replayTimestamp ||
+    props.sensorData.timestamp
+  if (!rawTimestamp) return '—'
+  const parsed = new Date(rawTimestamp)
+  return Number.isNaN(parsed.getTime())
+    ? String(rawTimestamp)
+    : parsed.toLocaleString('id-ID')
 })
 
 const connectionStatus = computed(() => {
@@ -114,73 +117,37 @@ const connectionClass = computed(() => {
   return 'waiting'
 })
 
-const checkConnection = () => {
-  console.log('🔌 Checking MQTT connection...')
-  // This can trigger a reconnection attempt if needed
+const formatValue = (value, digits = 2) => {
+  const parsed = Number(value)
+  return value !== null && value !== undefined && Number.isFinite(parsed)
+    ? parsed.toFixed(digits)
+    : '—'
 }
 
-// Watch untuk debug
-watch(() => props.sensorData, (newData) => {
-  console.log('📊 DataTable component received update:', newData)
-}, { deep: true, immediate: true })
-
-onMounted(() => {
-  timeInterval = setInterval(() => {
-    currentTime.value = new Date().toLocaleString('id-ID')
-  }, 1000)
-})
-
-onUnmounted(() => {
-  if (timeInterval) clearInterval(timeInterval)
-})
-
-const formatValue = (value) => {
-  if (value === null || value === undefined) return '0.00'
-  return Number(value).toFixed(2)
-}
-
-const formatEnergy = (value) => {
-  if (!value || value <= 0) return '0.00 kWh'
-  const kWh = value / 1000
-  return `${kWh.toFixed(2)} kWh`
+const formatInteger = value => {
+  const parsed = Number(value)
+  return value !== null && value !== undefined && Number.isFinite(parsed)
+    ? String(Math.trunc(parsed))
+    : '—'
 }
 
 const getOverallStatus = () => {
-  const temp = parseFloat(props.sensorData.temperature) || 0
-  const voltage = parseFloat(props.sensorData.voltage) || 0
-  const current = parseFloat(props.sensorData.current) || 0
-  const humidity = parseFloat(props.sensorData.humidity) || 0
-  const voltageStatus = props.sensorData.voltageStatus
-  const currentStatus = props.sensorData.currentStatus
-  
-  const hasValidData = 
-    (temp > -50 && temp < 100) ||
-    (humidity >= 0 && humidity <= 100) ||
-    voltageStatus === 'normal' ||
-    currentStatus === 'normal'
-  
-  if (!hasValidData) {
+  if (!hasData.value) {
     return 'status-offline'
   }
-  
-  if (
-    temp > 30 || temp < 15 ||
-    (voltageStatus === 'normal' && (voltage > 250 || voltage < 180)) ||
-    (currentStatus === 'normal' && current > 80) ||
-    voltageStatus !== 'normal' ||
-    currentStatus !== 'normal'
-  ) {
+  if (!props.sensorData.valid || props.sensorData.route === 'cloud') {
     return 'status-warning'
   }
-  
   return 'status-online'
 }
 
 const getOverallStatusText = () => {
   const status = getOverallStatus()
-  if (status === 'status-online') return 'Normal'
-  if (status === 'status-warning') return 'Perhatian'
-  return 'Offline'
+  if (status === 'status-online') return 'Valid · Edge'
+  if (status === 'status-warning') {
+    return props.sensorData.valid ? 'Dialihkan · Cloud' : 'Payload Tidak Valid'
+  }
+  return 'Tidak Tersedia'
 }
 </script>
 
@@ -426,7 +393,3 @@ td {
   }
 }
 </style>
-
-
-
-

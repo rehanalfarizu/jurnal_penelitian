@@ -62,7 +62,7 @@ const props = defineProps({
   actions: {
     type: Array,
     default: () => []
-    // Format: [{ icon: '🔌', text: 'Hubungkan ke MQTT broker' }]
+    // Format: [{ icon: '▶️', text: 'Jalankan replay API' }]
   },
   buttonText: {
     type: String,

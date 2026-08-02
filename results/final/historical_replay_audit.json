@@ -1,0 +1,195 @@
+{
+  "status": "historical_replay_workload",
+  "source": {
+    "path": "Data/sensor_data.csv",
+    "sha256": "ca7831a188a191edbf82a673fac90dbb875b5095986ed07699c02530f2a02a0e",
+    "rows": 2027520,
+    "expected_rows": 2027520,
+    "expected_rows_match": true,
+    "timestamp_start_utc": "2026-02-23T23:14:43.896301+00:00",
+    "timestamp_end_utc": "2026-05-24T01:22:06.727676+00:00",
+    "duplicate_timestamps": 0,
+    "non_monotonic_timestamps": 0,
+    "device_count": 1,
+    "device_ids": [
+      "RASPBERRY_PI_GATEWAY_001"
+    ]
+  },
+  "provenance": {
+    "reference_trace": "Data/sensor_data_export_2026-05-17_to_2026-05-23.xlsx",
+    "reference_rows": 92160,
+    "inferred_replay_blocks": 22.0,
+    "integer_replay_blocks": true,
+    "source_type": "historical_replay",
+    "lineage_classification": "deterministic_replay_of_transformed_historical_trace",
+    "source_row_identity_basis": "Positional modulo mapping to the workbook row index; source_row_id denotes ancestry, not value equality.",
+    "relationship": "The CSV contains 22 deterministic repetitions of one 92,160-row legacy-derived block. The block differs from the exported workbook in audited fields and the legacy transformation code is unavailable; replay rows are therefore not raw copies or independent field observations."
+  },
+  "lineage": {
+    "classification": "deterministic_replay_of_transformed_historical_trace",
+    "payload_columns_checked": [
+      "DeviceID",
+      "Suhu (C)",
+      "Kelembaban (%)",
+      "Tegangan (V)",
+      "Arus (A)",
+      "Daya (W)",
+      "Jumlah Orang"
+    ],
+    "all_replay_payloads_identical_to_first_block": true,
+    "cross_block_mismatch_counts": {
+      "DeviceID": 0,
+      "Suhu (C)": 0,
+      "Kelembaban (%)": 0,
+      "Tegangan (V)": 0,
+      "Arus (A)": 0,
+      "Daya (W)": 0,
+      "Jumlah Orang": 0
+    },
+    "first_block_vs_exported_workbook": {
+      "rows_compared": 92160,
+      "all_payload_values_equal": false,
+      "total_changed_cells": 86085,
+      "comparison_tolerance": "strings exact after missing-value normalization; numerics absolute tolerance 1e-9",
+      "by_column": {
+        "device_id": {
+          "rows_compared": 92160,
+          "match_count": 92160,
+          "changed_count": 0,
+          "match_rate": 1.0
+        },
+        "temperature_c": {
+          "rows_compared": 92160,
+          "match_count": 92158,
+          "changed_count": 2,
+          "match_rate": 0.9999782986111111
+        },
+        "humidity_pct": {
+          "rows_compared": 92160,
+          "match_count": 92158,
+          "changed_count": 2,
+          "match_rate": 0.9999782986111111
+        },
+        "voltage_v": {
+          "rows_compared": 92160,
+          "match_count": 89349,
+          "changed_count": 2811,
+          "match_rate": 0.9694986979166667
+        },
+        "current_a": {
+          "rows_compared": 92160,
+          "match_count": 90982,
+          "changed_count": 1178,
+          "match_rate": 0.9872178819444445
+        },
+        "power_w": {
+          "rows_compared": 92160,
+          "match_count": 89348,
+          "changed_count": 2812,
+          "match_rate": 0.9694878472222223
+        },
+        "people_count": {
+          "rows_compared": 92160,
+          "match_count": 12880,
+          "changed_count": 79280,
+          "match_rate": 0.13975694444444445
+        }
+      }
+    },
+    "transformation_code_available": false,
+    "interpretation": "The full CSV is suitable as a deterministic replay workload. It must not be described as new measurements, independent samples, augmentation diversity, or a raw copy of the XLSX."
+  },
+  "quality": {
+    "zero_counts": {
+      "Suhu (C)": 0,
+      "Kelembaban (%)": 0,
+      "Tegangan (V)": 0,
+      "Arus (A)": 0,
+      "Daya (W)": 0,
+      "Jumlah Orang": 102322
+    },
+    "missing_counts": {
+      "Timestamp": 0,
+      "DeviceID": 0,
+      "Suhu (C)": 0,
+      "Kelembaban (%)": 0,
+      "Tegangan (V)": 0,
+      "Arus (A)": 0,
+      "Daya (W)": 0,
+      "Jumlah Orang": 0
+    },
+    "sample_power_consistency_error_w": {
+      "mean": 0.5569360000000001,
+      "p95": 1.1000000000000014,
+      "max": 1.2000000000000028
+    },
+    "energy_integration": {
+      "method": "trapezoidal_integration_of_recorded_legacy_v_times_i_power",
+      "timestamp_basis": "exported_workbook_source_timestamp",
+      "measurement_role": "historical_replay_payload",
+      "max_gap_seconds": 10.0,
+      "trace_cycle_rows": 92160,
+      "integrated_intervals": 91488,
+      "excluded_intervals": 672,
+      "energy_wh": 3474.3708733044755,
+      "trace_cycle_energy_legacy_wh": 3474.3708733044755,
+      "active_energy_ground_truth": false,
+      "interpretation": "Derived from the transformed CSV replay payload. It supports the replay API and workload demonstration only; the field-trace energy is calculated separately from the exported XLSX. The cumulative value resets for each replay cycle."
+    },
+    "occupancy": {
+      "occupied_sample_count": 4748,
+      "unoccupied_sample_count": 252,
+      "people_count_sample_mean": 3.085,
+      "people_count_sample_max": 5
+    }
+  },
+  "benchmark_sample": {
+    "method": "evenly spaced positions across all historical replay blocks",
+    "requested_rows": 5000,
+    "selected_rows": 5000,
+    "covered_replay_blocks": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21
+    ]
+  },
+  "research_role": {
+    "allowed": [
+      "edge-cloud monitoring replay",
+      "legacy-proxy energy integration over the source trace",
+      "occupancy monitoring from the historical people-count field",
+      "latency, throughput, routing, and freshness benchmark",
+      "multiscale geospatial-building-indoor telemetry demonstration"
+    ],
+    "prohibited": [
+      "independent field-observation count",
+      "raw historical trace equivalence",
+      "data augmentation diversity",
+      "model accuracy validation",
+      "field validation of active power",
+      "calibrated active-energy measurement",
+      "survey-validated geospatial accuracy"
+    ],
+    "independent_field_observations_claimed": false,
+    "model_training_used": false
+  }
+}

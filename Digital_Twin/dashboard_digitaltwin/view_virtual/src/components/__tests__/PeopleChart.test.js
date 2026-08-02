@@ -35,7 +35,7 @@ describe('PeopleChart.vue', () => {
         }
       })
       
-      expect(wrapper.text()).toContain('Menunggu Data People Counter')
+      expect(wrapper.text()).toContain('Menunggu Okupansi Replay')
     })
 
     it('shows EmptyState with correct icon', () => {

@@ -1,9 +1,324 @@
 {
-  "run_type": "final_configured_experiment",
+  "evaluation_type": "historical_replay_architecture_evaluation",
+  "project_title": "Evaluasi Kinerja Digital Twin Edge\u2013Cloud Multiskala untuk Monitoring Energi dan Okupansi",
+  "claim_scope": "performance evaluation of a monitoring-oriented one-way Digital Twin prototype using deterministic replay derived from one archived physical-sensor trace; field-origin telemetry and replay benchmark results are reported separately",
+  "lineage_classification": "deterministic_replay_of_transformed_historical_trace",
   "files": {
+    "run_experiment.py": {
+      "sha256": "d102f4c999dab699c0cf9e235d4b2d40c4e85d3e38e270492f84fe88c9ad7f2a",
+      "bytes": 7004
+    },
     "configs/experiment.json": {
-      "sha256": "a60aa58ffd7c9ce82c7f6011c0d871ad2ee16114e05b7834c97268a575c5cd39",
-      "bytes": 2890
+      "sha256": "096de3e7bdd2a0c96326c5b154b99033cecc6432d3242c352fe8aaca4b26d1dc",
+      "bytes": 5230
+    },
+    "requirements.txt": {
+      "sha256": "13547252bde10c6cac7d4c083b9b6fd7dc0cb1a56e96e3def4f24a41b7b74442",
+      "bytes": 162
+    },
+    "scripts/build_evaluation_notebook.py": {
+      "sha256": "5a84b04a4cb8bb3698c754369e00e121a45db3621f671145b32136641a069d95",
+      "bytes": 60960
+    },
+    "notebooks/01_evaluasi_final.ipynb": {
+      "sha256": "3d5c47da2e92694b4d15e46ed4c6fb73218df9944e0d8ecbdd3ca8a5baa2d07a",
+      "bytes": 1987573
+    },
+    "src/data/audit_trace.py": {
+      "sha256": "ab0e53b4682c2609c999ffd5f2d491fc0ed2bdfb2e259d7ecb3a62609ff20361",
+      "bytes": 7956
+    },
+    "src/data/prepare_historical_replay.py": {
+      "sha256": "3344552eeb3e58fef864f4a77d2d79cc4e2f5f1632ada36bcbd5da342b127327",
+      "bytes": 19851
+    },
+    "src/benchmark/edge_cloud_benchmark.py": {
+      "sha256": "ccf19b6066fe501cd0f04b89df5b8c0d0c7f35132b7b7b502a03f60248d4387e",
+      "bytes": 22786
+    },
+    "src/replay/replay_server.py": {
+      "sha256": "c6aede02fd4502e69b8beb6814227913fe331a378359068a8764be325a5913c9",
+      "bytes": 7963
+    },
+    "src/reporting/generate_figures.py": {
+      "sha256": "1eb21e312c679495c740312e40bc1969bec360417903f4a1ae1a76a17833984e",
+      "bytes": 19761
+    },
+    "src/reporting/generate_final_report.py": {
+      "sha256": "64cd1536b9d13ebeafb9cc4c3b8c3aa6f35e67b28953c60b2599bccb97080ad9",
+      "bytes": 14853
+    },
+    "schemas/telemetry.schema.json": {
+      "sha256": "1cfabac98390c8ffdebc99eb8983884615e1a27415cd16337c1e052338ad73c1",
+      "bytes": 7538
+    },
+    "tests/test_pipeline.py": {
+      "sha256": "fdc8f1f6e360021bc8e136861dccdd2da2e0068b1ed140dcd8793c2a1a51d2a2",
+      "bytes": 13060
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/package.json": {
+      "sha256": "dd12bc7d9cd253a80cef94acaf3b112c7e6d229aed4c364b8fbf2c2f3f342729",
+      "bytes": 718
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/package-lock.json": {
+      "sha256": "240e136b7addf6448a96c2b9a9c6cb1e019855bd22a56ab1bff27bc8c2aee82e",
+      "bytes": 279685
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/vite.config.js": {
+      "sha256": "b54b2a7b679405676847ae6d81f8680e1edaa10bbf165b88d2180420285d1e09",
+      "bytes": 1839
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/vitest.config.js": {
+      "sha256": "81218e348ebd79a366be68a60eb76e309f5336b0007f8c0271e4437696401ebb",
+      "bytes": 435
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/index.html": {
+      "sha256": "b9d4f5426e50bc88015b754273422c3bce6e28b3e2fa749da18e25b6d7f2274e",
+      "bytes": 363
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/components/__tests__/DataTable.test.js": {
+      "sha256": "4ce67bf3bd02a263ddd4513bc801fd80e81d003f0cfb71afd48c55c9183c64b4",
+      "bytes": 2014
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/components/__tests__/ElectricityChart.test.js": {
+      "sha256": "8dfe5bc39e1a833f186131a52301a798706a3220016a3c643af0ce9bf57e5651",
+      "bytes": 2085
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/components/__tests__/EmptyState.test.js": {
+      "sha256": "b82b61085c08eb2d7505db3b09286cb0b920fe2c64c1fd5ec1516cfda3f0a9e7",
+      "bytes": 1962
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/components/__tests__/MultiscaleDigitalTwin.test.js": {
+      "sha256": "477921e55d90fbf58bd6714172a9348d9d1ad5daa10ab2b066888a1bc8639bc3",
+      "bytes": 1834
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/components/__tests__/PeopleChart.test.js": {
+      "sha256": "b602f68eb8f904d4150278ceddad09866c192f390359b61529ce5f81e66e256a",
+      "bytes": 2083
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/components/__tests__/TemperatureChart.test.js": {
+      "sha256": "37e2d5d208cfb2ad9948bd9b2bb5225bc9bc6ac164fae00fca0dde7d940b2e3e",
+      "bytes": 2622
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/composables/__tests__/useTelemetry.test.js": {
+      "sha256": "fbc23d90a97af5aba4184875d5fac0824187a06d52f408630027a49e268aeaab",
+      "bytes": 6051
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/composables/useTelemetry.js": {
+      "sha256": "ee7aef79f782cde7b80b12509ecf7b8e30bd9abac61808661a6e6c3cc8e4a04c",
+      "bytes": 5936
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/lib/appConfig.js": {
+      "sha256": "1de2379d15539a541a102a5f3881d3f7ed0b66acca073e0e24f6835e31ab23b1",
+      "bytes": 535
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/main.js": {
+      "sha256": "0d42fb6bb74a51d647f20a0cd2bcdcc7b89b146f4cdfbf6f1f7b640e7e036119",
+      "bytes": 111
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/App.vue": {
+      "sha256": "69bfd38eadccef700837d3a0b57055ce0abc15f3b83184c4d6d1f695ad2795f9",
+      "bytes": 932
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/components/DashboardHome.vue": {
+      "sha256": "6ce3c0fc7b55ef2f079585b7b5858ae99d84fc1c55902982b577b30958ebedc3",
+      "bytes": 15275
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/components/DataTable.vue": {
+      "sha256": "6a277c36d0b980b5bac1a97ec2eb3f50c37c38d3c92e1f7be62c9f081913ddc8",
+      "bytes": 9446
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/components/DigitalTwin3D_Babylon.vue": {
+      "sha256": "df8e92fdb6fc168f05049e8fb7aa3ab5cef09cf5b7f868c3aea68a281d5005b0",
+      "bytes": 27644
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/components/ElectricityChart.vue": {
+      "sha256": "98ccd30ef9c9a2d976d2005a6c598a2f5be4fc0a8bc6b9ac1ac48dadd19657e2",
+      "bytes": 3798
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/components/EmptyState.vue": {
+      "sha256": "2f018b564f009d6f334a4e9b767439e3f45677e9c4ecbc95e3f4b00928f9d981",
+      "bytes": 7324
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/components/MultiscaleDigitalTwin.vue": {
+      "sha256": "3606311bb6c8bb64c5a1fc6a17a794f8dc0dd7698b0a972ef6360d4d44e25a49",
+      "bytes": 8076
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/components/PeopleChart.vue": {
+      "sha256": "291b5e1ae2eb2d831c1d6d938495aed73284420b6812ea752d30cbfa4e92b4d2",
+      "bytes": 5238
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/components/TemperatureChart.vue": {
+      "sha256": "dc9e98dff04d0c3534c6d0de0ec812c31a786ed8f6b51a523875abeff630ea52",
+      "bytes": 3851
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/src/style.css": {
+      "sha256": "6d03a137a1282748624ca9a9836d2f0701a50854fc6776b4da9717496c8cbb67",
+      "bytes": 6930
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/license.txt": {
+      "sha256": "eb9d9abe5ef3510a23c4dc077f6992ce9afe9041d2b7278776197715c042b36e",
+      "bytes": 844
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/scene.bin": {
+      "sha256": "f5e102bd93dc7a2abd544d65a8290b45fdedf65c7fba3ece5128f8bfad07c6d2",
+      "bytes": 97741668
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/scene.gltf": {
+      "sha256": "cafdb707a91149f34a1fd352bdd1896b0d78b0261331bc4200f9c44d6c7b129c",
+      "bytes": 354373
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Birch_Wood_Flooring__English_baseColor.png": {
+      "sha256": "818e10364d9b561b670acc6559bf3af99796b4d4154cd3d4c9b5381415a77fc6",
+      "bytes": 789885
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Birch_Wood_Flooring__English_metallicRoughness.png": {
+      "sha256": "20e6bebbbee525ef066472afddee92579e95be7ed4b7193be5b15f9c67d576ef",
+      "bytes": 177710
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Coffee_Cup_-_Foam_baseColor.png": {
+      "sha256": "9395b4b66cdd3e7e487022ec4e25bfb70b46f32620dc919b03210e51d38fdb95",
+      "bytes": 450153
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Fabric.001_baseColor.png": {
+      "sha256": "e58d8d81818c9b0eadb0a034bc725da3b595661ff9fced196821550af018a2d8",
+      "bytes": 608108
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Fabric.001_metallicRoughness.png": {
+      "sha256": "3df9419302ef08ed43a1ddea1efffe8e3889bfb7b08306a8d3d667521b75d7cf",
+      "bytes": 730129
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Fabric.001_normal.png": {
+      "sha256": "bddab521438c237b77f37e7c1693b9916541752d7a49dabbbff9c5c7495c9a05",
+      "bytes": 2688568
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Fabric_Upholstery_001a.001_baseColor.png": {
+      "sha256": "3465d5e957a7dfc7774b0df79e752e31947fea970382c96ef9f78b2223cb6e3c",
+      "bytes": 259861
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Grapes_of_Wrath_baseColor.png": {
+      "sha256": "b60aa38e714270c3668768518fffa207c7cedf85e88ce8c0a810147e7588466d",
+      "bytes": 756924
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Leather_Fabric_01.002_baseColor.png": {
+      "sha256": "b6d4e746d063a03e5088c65a65e848e2b8184216abb1d0245a6839fbb0b2711f",
+      "bytes": 918419
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Leather_Fabric_01_baseColor.png": {
+      "sha256": "26d0992287b539ccabc55cb65d8322cacd8661cb6c255d10d7a885e0574981c2",
+      "bytes": 194811
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Material.001_baseColor.png": {
+      "sha256": "68384a73cbd3802a065fc587c77c9407d9ca6333b68812653198c51e84d242b1",
+      "bytes": 844372
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Material.002_baseColor.png": {
+      "sha256": "8d17a4a756a7528b1b55ca509cffaaac42d001cf45fe5f7b23774f36fc9c9be7",
+      "bytes": 1086372
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Material.003_baseColor.png": {
+      "sha256": "8082605518c9c823ddcfc8a91d48e1cd0472603d91e91476e2a7db095e8bdc86",
+      "bytes": 782008
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Material.004_baseColor.png": {
+      "sha256": "6ed6fd823ce18ec909b649d9165d2e80414176284f6f06fe154d7374003215f7",
+      "bytes": 392575
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Material.005_baseColor.jpeg": {
+      "sha256": "340fd8f8dbf74f070f29a2306ab6019f93c677b90efb054852510a95e48c2530",
+      "bytes": 58869
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Material.007_baseColor.png": {
+      "sha256": "3060534ae202b384522abf21c486b980b7687fc2523aa71f3816ed6a13398c37",
+      "bytes": 194330
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Material.008_baseColor.png": {
+      "sha256": "a10afd56068a54703d712c410bc4dc1171ce7e7769b64abbcd37df6e5280f080",
+      "bytes": 571578
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Material.009_baseColor.png": {
+      "sha256": "f655b2e797e3cd2b33ecdc71e952d0111e0c4fbace5bb2af934a7533e5299e28",
+      "bytes": 541882
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Material.013_baseColor.png": {
+      "sha256": "be11769f9408bc8c70b54e2eec3ae23004bfade21e8f4285addc3bf523421463",
+      "bytes": 499381
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Material.013_normal.png": {
+      "sha256": "7282e02e24d93010dce79dea81b1df0044ba1769e41b3b1de48bbea9998fc0e6",
+      "bytes": 126251
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Material.021_baseColor.png": {
+      "sha256": "c93d5ddb1d3f67f3609c6bc80e9af5ec3b847fcd2a954a5df7e15a0830659e60",
+      "bytes": 868855
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/Tecido.005_baseColor.png": {
+      "sha256": "688a80119fad1753e09d1e7f8ba31cf087ae0715e8ca1d2e9c65e717d2201a80",
+      "bytes": 681442
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/material.001_baseColor.jpeg": {
+      "sha256": "c962b0fac697d2e0a20d51013aa8299d6324e599feb627764bfc3002933d8da8",
+      "bytes": 521886
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/rattan_baseColor.png": {
+      "sha256": "1a3e6a81a78ecb951fbefb110bd6e4c10c91fce22f850a71289974f7379b7f4c",
+      "bytes": 8003
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/textures/rattan_metallicRoughness.png": {
+      "sha256": "a3907e1da25a5db491d9551b07f00cff0d5d9fdc29575ee1491ee262c09e184d",
+      "bytes": 7072
+    },
+    "Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/README.md": {
+      "sha256": "eb8c9e636e4d0bcd4c7479799012fcb101ba06c1325c7a0b248a18475ee164eb",
+      "bytes": 725
+    },
+    "results/final/RESULTS.md": {
+      "sha256": "cab9edb4cc4022e724c1a5237dd364ade1490a00db78d19da196b48cfefe2067",
+      "bytes": 6841
+    },
+    "results/final/benchmark_metrics.json": {
+      "sha256": "f5d0f030f23eb6eeeaac99ad82f1e91bdd133566c94a069873188abae0d9cb29",
+      "bytes": 7741
+    },
+    "results/final/experiment_config.json": {
+      "sha256": "096de3e7bdd2a0c96326c5b154b99033cecc6432d3242c352fe8aaca4b26d1dc",
+      "bytes": 5230
+    },
+    "results/final/experiment_summary.json": {
+      "sha256": "f254c561e8f60165e8e667493b6566ba0ba6d5ad6ae4a27fbb4062873a7ea963",
+      "bytes": 11507
+    },
+    "results/final/figures/01_trace_profile.png": {
+      "sha256": "550d41fb08a19615f78d8feb8b838e82e22356b29138ba7e1e19ccdf2ec512d8",
+      "bytes": 259953
+    },
+    "results/final/figures/02_replay_provenance.png": {
+      "sha256": "18531fefa1567f55cab3c85590e1a6d27a82a61b443718207f6d5433abe02ed5",
+      "bytes": 486993
+    },
+    "results/final/figures/03_monitoring_checks.png": {
+      "sha256": "64c9cfeb8e425213456f0b6734fa1cdc35f4236432b4aac105d390f502500168",
+      "bytes": 244963
+    },
+    "results/final/figures/04_latency_characteristics.png": {
+      "sha256": "6e08a6e2c0708f8dba1aa513255754f1f68de633d325581851040e9b124e3746",
+      "bytes": 265734
+    },
+    "results/final/figures/05_multiscale_digital_twin.png": {
+      "sha256": "702be5160c751fa0188966768e9e1ef0e44bead8caa02cf2990425c8547373be",
+      "bytes": 155927
+    },
+    "results/final/historical_replay_audit.json": {
+      "sha256": "35ae9cd7396623a2294a1f38d1ce39fcedf10d7686099efb67cae05cfe122ba2",
+      "bytes": 6265
+    },
+    "results/final/historical_replay_sample.csv": {
+      "sha256": "3f107be1ac245f9b6605e74fc86c5e109aeade5529a7c4a00e7a29ea62065bc5",
+      "bytes": 1832393
+    },
+    "results/final/trace_audit.json": {
+      "sha256": "d25d96b205c9f1935446cb27674dbd22990484c6009dc0007399cced2b750e06",
+      "bytes": 5073
     },
     "Data/sensor_data_export_2026-05-17_to_2026-05-23.xlsx": {
       "sha256": "dd8b5028eda7bca0265da4ada881e1ed1f1ec84afb6b6f0a33cd82f9984f4d29",
@@ -12,14 +327,8 @@
     "Data/sensor_data.csv": {
       "sha256": "ca7831a188a191edbf82a673fac90dbb875b5095986ed07699c02530f2a02a0e",
       "bytes": 162251693
-    },
-    "outputs/synthetic_telemetry.csv": {
-      "sha256": "165a09e996df8ef6a04d13205d05f796826ffa7e5957257b64bdfbdecd1652da",
-      "bytes": 145007839
-    },
-    "outputs/power_estimator.joblib": {
-      "sha256": "58565112d27b710f39cea0531884a2dbcc90b0106991498a687e3b628f37559d",
-      "bytes": 2920
     }
-  }
+  },
+  "provenance_statement": "The CSV contains 22 deterministic repetitions of one 92,160-row legacy-derived block. The block differs from the exported workbook in audited fields and the legacy transformation code is unavailable; replay rows are therefore not raw copies or independent field observations.",
+  "manifest_note": "artifact_manifest.json excludes its own hash; timing metrics may vary between hosts while lineage and seeded routing counts remain reproducible."
 }

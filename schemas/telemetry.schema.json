@@ -1,67 +1,224 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://example.invalid/schemas/telemetry.schema.json",
-  "title": "Edge-cloud power-estimation telemetry",
+  "title": "Historical-replay edge-cloud monitoring telemetry",
+  "description": "Contract for energy and occupancy monitoring from historical replay with explicit provenance and a multiscale Digital Twin context. It contains no machine-learning estimate.",
   "type": "object",
   "required": [
     "timestamp_utc",
     "device_id",
     "source_type",
-    "observed",
-    "estimate",
+    "provenance",
+    "monitoring",
+    "digital_twin",
     "processing"
   ],
   "properties": {
     "timestamp_utc": { "type": "string", "format": "date-time" },
     "device_id": { "type": "string", "minLength": 1 },
-    "scenario_id": { "type": ["string", "null"] },
-    "run_id": { "type": ["string", "null"] },
-    "source_type": {
-      "enum": [
-        "real_trace_replay",
-        "synthetic_calibrated",
-        "legacy_augmented_replay",
-        "live_sensor"
-      ]
+    "source_type": { "const": "historical_replay" },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "lineage_classification",
+        "source_timestamp_utc",
+        "replay_timestamp_utc",
+        "replay_id",
+        "replay_block_id",
+        "source_row_id",
+        "source_row_index"
+      ],
+      "properties": {
+        "lineage_classification": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Result of the value-level XLSX-to-CSV lineage audit."
+        },
+        "source_timestamp_utc": {
+          "type": ["string", "null"],
+          "format": "date-time"
+        },
+        "replay_timestamp_utc": { "type": "string", "format": "date-time" },
+        "replay_id": { "type": "string", "minLength": 1 },
+        "replay_block_id": { "type": "integer", "minimum": 0 },
+        "source_row_id": { "type": "string", "minLength": 1 },
+        "source_row_index": { "type": "integer", "minimum": 0 }
+      },
+      "additionalProperties": false
     },
-    "observed": {
+    "monitoring": {
       "type": "object",
       "required": [
         "temperature_c",
         "humidity_pct",
         "voltage_v",
         "current_a",
-        "power_w",
-        "people_count"
+        "power_legacy_w",
+        "power_formula_w",
+        "power_consistency_error_w",
+        "energy_interval_legacy_wh",
+        "energy_cumulative_legacy_wh",
+        "energy_integration_status",
+        "people_count",
+        "occupancy_status",
+        "voltage_status",
+        "current_status"
       ],
       "properties": {
         "temperature_c": { "type": ["number", "null"] },
         "humidity_pct": { "type": ["number", "null"] },
         "voltage_v": { "type": ["number", "null"] },
         "current_a": { "type": ["number", "null"] },
-        "power_w": { "type": ["number", "null"] },
-        "people_count": { "type": ["integer", "null"], "minimum": 0 }
+        "power_legacy_w": { "type": ["number", "null"] },
+        "power_formula_w": { "type": ["number", "null"] },
+        "power_consistency_error_w": {
+          "type": ["number", "null"],
+          "minimum": 0
+        },
+        "energy_interval_legacy_wh": {
+          "type": ["number", "null"],
+          "minimum": 0
+        },
+        "energy_cumulative_legacy_wh": {
+          "type": ["number", "null"],
+          "minimum": 0
+        },
+        "energy_integration_status": {
+          "enum": ["trace_start", "integrated", "gap_or_value_excluded", "unknown"]
+        },
+        "people_count": { "type": ["integer", "null"], "minimum": 0 },
+        "occupancy_status": {
+          "enum": ["occupied", "unoccupied", "unknown"]
+        },
+        "voltage_status": {
+          "enum": ["normal", "invalid", "unknown"]
+        },
+        "current_status": {
+          "enum": ["normal", "below_threshold", "unknown"]
+        }
       },
       "additionalProperties": false
     },
-    "estimate": {
+    "digital_twin": {
       "type": "object",
-      "required": ["power_w", "model_name", "model_scope"],
+      "required": [
+        "representation_class",
+        "synchronization_mode",
+        "supported_views",
+        "application_lod",
+        "lod_transition",
+        "geospatial_reference",
+        "scale_semantics",
+        "data_direction"
+      ],
       "properties": {
-        "power_w": { "type": ["number", "null"], "minimum": 0 },
-        "model_name": { "type": "string" },
-        "model_scope": { "type": "string" }
+        "representation_class": {
+          "const": "monitoring_oriented_one_way_prototype"
+        },
+        "synchronization_mode": {
+          "const": "request_driven_historical_replay"
+        },
+        "supported_views": {
+          "type": "array",
+          "prefixItems": [
+            { "const": "geospatial_site" },
+            { "const": "building" },
+            { "const": "indoor" }
+          ],
+          "items": false,
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "application_lod": {
+          "type": "array",
+          "prefixItems": [
+            {
+              "type": "object",
+              "required": ["lod_id", "view", "scale", "detail"],
+              "properties": {
+                "lod_id": { "const": "LoD-A" },
+                "view": { "const": "geospatial_site" },
+                "scale": { "const": "site" },
+                "detail": { "type": "string", "minLength": 1 }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": ["lod_id", "view", "scale", "detail"],
+              "properties": {
+                "lod_id": { "const": "LoD-B" },
+                "view": { "const": "building" },
+                "scale": { "const": "building" },
+                "detail": { "type": "string", "minLength": 1 }
+              },
+              "additionalProperties": false
+            },
+            {
+              "type": "object",
+              "required": ["lod_id", "view", "scale", "detail"],
+              "properties": {
+                "lod_id": { "const": "LoD-C" },
+                "view": { "const": "indoor" },
+                "scale": { "const": "indoor" },
+                "detail": { "type": "string", "minLength": 1 }
+              },
+              "additionalProperties": false
+            }
+          ],
+          "items": false,
+          "minItems": 3,
+          "maxItems": 3
+        },
+        "lod_transition": {
+          "const": "manual_view_selection"
+        },
+        "geospatial_reference": {
+          "type": "object",
+          "required": [
+            "latitude",
+            "longitude",
+            "crs",
+            "verification_status"
+          ],
+          "properties": {
+            "latitude": { "type": "number", "minimum": -90, "maximum": 90 },
+            "longitude": { "type": "number", "minimum": -180, "maximum": 180 },
+            "crs": { "const": "EPSG:4326" },
+            "verification_status": {
+              "const": "legacy_coordinate_not_survey_validated"
+            }
+          },
+          "additionalProperties": false
+        },
+        "scale_semantics": { "type": "string", "minLength": 1 },
+        "data_direction": {
+          "const": "physical_or_replayed_source_to_digital_representation_only"
+        }
       },
       "additionalProperties": false
     },
     "processing": {
       "type": "object",
-      "required": ["tier", "compute_latency_ms"],
+      "required": [
+        "tier",
+        "valid",
+        "route_reason",
+        "compute_latency_ms",
+        "serialization_latency_ms",
+        "network_latency_ms",
+        "end_to_end_latency_ms",
+        "freshness_ms"
+      ],
       "properties": {
-        "tier": { "enum": ["edge", "cloud", "replay"] },
+        "tier": { "enum": ["edge", "cloud"] },
+        "valid": { "type": "boolean" },
+        "route_reason": { "type": "string", "minLength": 1 },
         "compute_latency_ms": { "type": "number", "minimum": 0 },
+        "serialization_latency_ms": { "type": "number", "minimum": 0 },
         "network_latency_ms": { "type": ["number", "null"], "minimum": 0 },
-        "end_to_end_latency_ms": { "type": ["number", "null"], "minimum": 0 }
+        "end_to_end_latency_ms": { "type": ["number", "null"], "minimum": 0 },
+        "freshness_ms": { "type": ["number", "null"], "minimum": 0 }
       },
       "additionalProperties": false
     }

@@ -33,7 +33,7 @@ describe('ElectricityChart.vue', () => {
         }
       })
       
-      expect(wrapper.text()).toContain('Menunggu Data Listrik')
+      expect(wrapper.text()).toContain('Menunggu Daya Replay')
     })
 
     it('shows EmptyState with correct icon', () => {

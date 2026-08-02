@@ -1,90 +1,100 @@
 {
   "project": {
-    "name": "edge-cloud-power-estimation-digital-twin",
-    "claim_scope": "simulation-based evaluation calibrated from one real sensor trace",
-    "power_definition": "apparent_power_va_reported_as_w_by_legacy_firmware"
+    "name": "digital-twin-edge-cloud-multiscale-performance",
+    "title": "Evaluasi Kinerja Digital Twin Edge–Cloud Multiskala untuk Monitoring Energi dan Okupansi",
+    "claim_scope": "performance evaluation of a monitoring-oriented one-way Digital Twin prototype using deterministic replay derived from one archived physical-sensor trace; field-origin telemetry and replay benchmark results are reported separately",
+    "power_definition": "recorded_rms_voltage_times_current_from_physical_sensors_without_power_factor_channel",
+    "field_sensor_trace": {
+      "origin": "archived telemetry from a physical sensor deployment on a monitored electrical installation",
+      "gateway_id_semantics": "DeviceID pada workbook mengidentifikasi gateway agregasi Raspberry Pi, bukan jumlah atau identitas unik setiap node sensor fisik.",
+      "hardware_roles": {
+        "ESP32": "node akuisisi lapangan untuk suhu, kelembapan, tegangan RMS, arus RMS, dan daya legacy V×I",
+        "Raspberry Pi": "gateway agregasi edge; pipeline legacy mencatat ID gateway ini untuk telemetry gabungan dan membawa jalur kamera/okupansi secara terpisah"
+      },
+      "firmware_sensor_chain": {
+        "voltage_sensor": "ZMPT101B",
+        "current_sensor": "SCT013-000",
+        "power_calculation": "RMS voltage multiplied by RMS current; no power-factor channel in the archived firmware"
+      },
+      "pln_kwh_reference_comparison": {
+        "status": "researcher-reported field comparison",
+        "reference": "display reading of the PLN kWh meter for the monitored installation",
+        "quantitative_interval_records_available_in_repository": false,
+        "reproducible_error_metric_available": false,
+        "interpretation": "The comparison supports the field origin and prior practical verification of the sensor deployment, but this repository cannot recompute a calibration error without timestamped start/end meter readings."
+      }
+    },
+    "legacy_repository": {
+      "url": "https://github.com/ikhsanudin017/dashboard_digitaltwin",
+      "audited_commit": "d29605270ee751153367d60c69c49278f4ccdc8c",
+      "role": "historical implementation provenance for the ESP32–Raspberry Pi–cloud and Cesium–Babylon architecture; not the source of current benchmark measurements"
+    }
   },
   "data": {
     "reference_trace": "Data/sensor_data_export_2026-05-17_to_2026-05-23.xlsx",
-    "augmented_legacy": "Data/sensor_data.csv",
+    "historical_replay": "Data/sensor_data.csv",
     "output_dir": "outputs",
-    "start_time_utc": "2026-06-01T00:00:00Z",
-    "sample_interval_seconds": 3.5,
-    "duration_hours": 24,
-    "runs_per_scenario": 4,
-    "base_seed": 20260728
+    "near_realtime_deadline_seconds": 3.5,
+    "deadline_basis": "operational deadline rounded from the original trace median inter-record gap of 3.5251918 seconds; not the legacy firmware nominal publish interval"
   },
-  "scenarios": [
-    {
-      "id": "normal",
-      "role": "train",
-      "outdoor_temperature_offset_c": 0.0,
-      "humidity_offset_pct": 0.0,
-      "occupancy_scale": 1.0,
-      "load_scale": 1.0,
-      "packet_loss_scale": 1.0,
-      "sensor_dropout_scale": 1.0
+  "replay": {
+    "expected_rows": 2027520,
+    "reference_rows_per_replay": 92160,
+    "benchmark_sample_size": 5000,
+    "sampling": "evenly spaced across all replay blocks",
+    "source_type": "historical_replay",
+    "random_seed": 20260728
+  },
+  "energy_integration": {
+    "method": "trapezoidal_integration_of_legacy_v_times_i_proxy",
+    "max_gap_seconds": 10.0,
+    "reset_scope": "one_source_trace_cycle",
+    "unit": "Wh",
+    "active_energy_ground_truth": false,
+    "interpretation": "derived monitoring indicator from the archived V×I signal; field comparison with the PLN kWh meter is researcher-reported, while quantitative interval readings are not stored in this repository"
+  },
+  "digital_twin": {
+    "representation_class": "monitoring_oriented_one_way_prototype",
+    "synchronization_mode": "request_driven_historical_replay",
+    "supported_views": [
+      "geospatial_site",
+      "building",
+      "indoor"
+    ],
+    "application_lod": [
+      {
+        "lod_id": "LoD-A",
+        "view": "geospatial_site",
+        "scale": "site",
+        "detail": "macro geospatial context, legacy coordinate, and edge-cloud relation"
+      },
+      {
+        "lod_id": "LoD-B",
+        "view": "building",
+        "scale": "building",
+        "detail": "building-level monitoring summary, energy, occupancy, and routing"
+      },
+      {
+        "lod_id": "LoD-C",
+        "view": "indoor",
+        "scale": "indoor",
+        "detail": "detailed indoor 3D scene, sensor state, and occupancy indicator"
+      }
+    ],
+    "lod_transition": "manual_view_selection",
+    "geospatial_reference": {
+      "latitude": -7.723,
+      "longitude": 110.5187,
+      "crs": "EPSG:4326",
+      "verification_status": "legacy_coordinate_not_survey_validated"
     },
-    {
-      "id": "hot_busy",
-      "role": "train",
-      "outdoor_temperature_offset_c": 3.0,
-      "humidity_offset_pct": 2.0,
-      "occupancy_scale": 1.7,
-      "load_scale": 1.25,
-      "packet_loss_scale": 1.0,
-      "sensor_dropout_scale": 1.0
-    },
-    {
-      "id": "humid_unstable",
-      "role": "validation",
-      "outdoor_temperature_offset_c": 1.0,
-      "humidity_offset_pct": 10.0,
-      "occupancy_scale": 1.2,
-      "load_scale": 1.1,
-      "packet_loss_scale": 2.5,
-      "sensor_dropout_scale": 1.5
-    },
-    {
-      "id": "sensor_degraded",
-      "role": "test",
-      "outdoor_temperature_offset_c": 0.5,
-      "humidity_offset_pct": 4.0,
-      "occupancy_scale": 1.1,
-      "load_scale": 1.05,
-      "packet_loss_scale": 8.0,
-      "sensor_dropout_scale": 3.0
-    },
-    {
-      "id": "cool_low_load",
-      "role": "test",
-      "outdoor_temperature_offset_c": -2.0,
-      "humidity_offset_pct": -5.0,
-      "occupancy_scale": 0.6,
-      "load_scale": 0.85,
-      "packet_loss_scale": 1.0,
-      "sensor_dropout_scale": 1.0
-    }
-  ],
-  "model": {
-    "train_scenarios": ["normal", "hot_busy"],
-    "validation_scenarios": ["humid_unstable"],
-    "test_scenarios": ["sensor_degraded", "cool_low_load"],
-    "random_forest_trees": 120,
-    "random_state": 20260728
+    "scale_semantics": "three project-defined application LoD levels: LoD-A geospatial site, LoD-B building, and LoD-C indoor 3D; conformance to CityGML, IndoorGML, IFC, or 3D Tiles geometric LoD has not been evaluated",
+    "data_direction": "physical_or_replayed_source_to_digital_representation_only"
   },
   "benchmark": {
-    "sample_size": 5000,
-    "workload": {
-      "source": "legacy_augmented_replay",
-      "expected_rows": 2027520,
-      "reference_rows_per_replay": 92160,
-      "sampling": "evenly spaced across all replay blocks",
-      "purpose": "architecture latency, throughput, routing, and Web-3D replay only; never model accuracy"
-    },
     "cloud_routing": {
       "power_anomaly_threshold_w": 42.6,
-      "basis": "p99 legacy power in the real calibration trace; invalid electrical readings are also routed to cloud"
+      "basis": "p99 legacy power in the original historical trace plus software rules for missing, non-finite, invalid electrical, and sub-0.1 A readings"
     },
     "cloud_network_profile": {
       "label": "configured network emulation; not a measured public cloud",

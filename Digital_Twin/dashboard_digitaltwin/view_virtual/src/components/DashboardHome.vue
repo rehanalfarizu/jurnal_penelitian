@@ -9,7 +9,7 @@
             </div>
             <div class="logo-copy">
               <h1 class="logo-text">Twin Space Dashboard</h1>
-              <p class="logo-subtitle">Research telemetry &amp; power estimation</p>
+              <p class="logo-subtitle">Digital Twin edge–cloud · energi, okupansi, dan visual multiskala</p>
             </div>
           </div>
         </div>
@@ -21,9 +21,9 @@
               <span>{{ isDarkMode ? 'Mode Terang' : 'Mode Gelap' }}</span>
             </button>
 
-            <div class="status-badge" :class="mqttConnected ? 'connected' : 'disconnected'">
+            <div class="status-badge" :class="telemetryConnected ? 'connected' : 'disconnected'">
               <span class="status-dot"></span>
-              <span class="status-text">{{ mqttConnected ? 'Replay/API terhubung' : 'API tidak tersedia' }}</span>
+              <span class="status-text">{{ telemetryConnected ? 'Replay/API terhubung' : 'API tidak tersedia' }}</span>
             </div>
 
             <div class="timestamp">
@@ -45,8 +45,8 @@
     <main class="main">
       <div class="container">
         <div class="card" style="margin-bottom: 20px;">
-          <h2>🎯 Digital Twin 3D <span style="font-size: 0.8em; opacity: 0.7;">- Klik icon sensor untuk melihat data</span></h2>
-          <DigitalTwin3D
+          <h2>🎯 Digital Twin Geospasial–Indoor Multiskala</h2>
+          <MultiscaleDigitalTwin
             :sensor-data="sensorData"
             :people-count="peopleCount"
             :is-dark-mode="isDarkMode"
@@ -54,30 +54,46 @@
         </div>
 
         <div class="card provenance-card" style="margin-bottom: 20px;">
-          <h2>🧪 Provenance Eksperimen</h2>
+          <h2>🧭 Provenance Replay Historis</h2>
           <div class="provenance-grid">
             <div><span>Sumber</span><strong>{{ sensorData.sourceType }}</strong></div>
-            <div><span>Skenario</span><strong>{{ sensorData.scenarioId || 'tidak berlaku' }}</strong></div>
-            <div><span>Run</span><strong>{{ sensorData.runId || 'tidak berlaku' }}</strong></div>
-            <div><span>Estimator</span><strong>{{ sensorData.modelName }}</strong></div>
+            <div><span>Blok replay</span><strong>{{ sensorData.replayBlockId ?? 'tidak berlaku' }}</strong></div>
+            <div><span>Ancestry posisi</span><strong>{{ sensorData.sourceRowId || 'tidak berlaku' }}</strong></div>
+            <div><span>Rute</span><strong>{{ sensorData.route }} · {{ sensorData.routeReason }}</strong></div>
+            <div><span>Okupansi</span><strong>{{ sensorData.occupancyStatus }} · {{ peopleCount ?? '—' }} orang</strong></div>
+            <div><span>Energi legacy satu siklus</span><strong>{{ formatEnergy(sensorData.energyCumulativeWh) }}</strong></div>
+            <div><span>Freshness API lokal (proksi)</span><strong>{{ formatLatency(sensorData.freshnessMs) }}</strong></div>
+            <div><span>Waktu sumber (lokal)</span><strong>{{ formatTimestamp(sensorData.sourceTimestamp) }}</strong></div>
+            <div><span>Waktu replay (lokal)</span><strong>{{ formatTimestamp(sensorData.replayTimestamp) }}</strong></div>
           </div>
-          <p class="scope-note">{{ sensorData.modelScope }}</p>
+          <p class="scope-note">{{ sensorData.scopeNote }}</p>
         </div>
 
-        <div class="grid grid-3" style="margin-bottom: 20px;">
+        <div class="grid grid-2" style="margin-bottom: 20px;">
           <div class="card">
-            <h2>🌡️ Suhu (24 Jam)</h2>
+            <h2>🌡️ Suhu (maks. 60 sampel · waktu sumber)</h2>
             <TemperatureChart :data="temperatureData" :is-dark-mode="isDarkMode" />
           </div>
 
           <div class="card">
-            <h2>⚡ Estimasi Daya (Near Real-Time)</h2>
+            <h2>⚡ Daya Legacy (maks. 60 sampel · waktu sumber)</h2>
             <ElectricityChart :data="electricityData" :is-dark-mode="isDarkMode" />
           </div>
 
           <div class="card">
-            <h2>👥 Jumlah Orang (Real-time)</h2>
+            <h2>👥 Jumlah Orang (maks. 60 sampel · waktu sumber)</h2>
             <PeopleChart :data="peopleData" :is-dark-mode="isDarkMode" />
+          </div>
+
+          <div class="card">
+            <h2>🔋 Energi Legacy Kumulatif per Siklus</h2>
+            <ElectricityChart
+              :data="energyData"
+              :is-dark-mode="isDarkMode"
+              metric-label="Energi Legacy Kumulatif (Wh)"
+              unit-label="Energi (Wh)"
+              empty-title="Menunggu Energi Replay"
+            />
           </div>
         </div>
 
@@ -86,7 +102,6 @@
           <DataTable
             :sensor-data="sensorData"
             :people-count="peopleCount"
-            :total-energy="totalEnergyWh"
           />
         </div>
 
@@ -98,12 +113,12 @@
 <script setup>
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import DataTable from './DataTable.vue'
-import DigitalTwin3D from './DigitalTwin3D_Babylon.vue'
+import MultiscaleDigitalTwin from './MultiscaleDigitalTwin.vue'
 import ElectricityChart from './ElectricityChart.vue'
 
 import PeopleChart from './PeopleChart.vue'
 import TemperatureChart from './TemperatureChart.vue'
-import { useMQTT } from '../composables/useMQTT'
+import { useTelemetry } from '../composables/useTelemetry'
 
 const props = defineProps({
   isDarkMode: {
@@ -115,23 +130,22 @@ const props = defineProps({
 const emit = defineEmits(['toggle-theme'])
 
 const {
-  mqttConnected,
+  telemetryConnected,
   sensorData,
-  connectMQTT,
-  disconnectMQTT
-} = useMQTT()
+  connectTelemetry,
+  disconnectTelemetry
+} = useTelemetry()
 
 const temperatureData = ref({ labels: [], values: [] })
 const electricityData = ref({ labels: [], values: [] })
 const peopleData = ref({ labels: [], values: [] })
-const peopleCount = ref(0)
-const totalEnergyWh = ref(0)
+const energyData = ref({ labels: [], values: [] })
+const peopleCount = ref(null)
 const currentTime = ref(new Date())
 
 const MAX_POINTS = 60
 
 let timeInterval = null
-let lastPowerTimestamp = Date.now()
 
 const formattedDate = computed(() => {
   const options = { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' }
@@ -147,16 +161,50 @@ const handleThemeToggle = () => {
   emit('toggle-theme')
 }
 
-const addChartDataPoint = (targetRef, value) => {
-  if (value === undefined || value === null || Number.isNaN(value)) return
+const formatTimestamp = value => {
+  if (!value) return 'tidak tersedia'
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return String(value)
+  return parsed.toLocaleString('id-ID', {
+    dateStyle: 'short',
+    timeStyle: 'medium'
+  })
+}
 
-  const timestamp = new Date().toLocaleTimeString('id-ID', {
+const formatLatency = value => {
+  const parsed = Number(value)
+  return value !== null && value !== undefined && Number.isFinite(parsed)
+    ? `${parsed.toFixed(3)} ms`
+    : 'tidak tersedia'
+}
+
+const formatEnergy = value => {
+  const parsed = Number(value)
+  return value !== null && value !== undefined && Number.isFinite(parsed)
+    ? `${parsed.toFixed(3)} Wh`
+    : 'tidak tersedia'
+}
+
+const formatChartTimestamp = value => {
+  if (!value) return 'tanpa waktu'
+  const parsed = new Date(value)
+  if (Number.isNaN(parsed.getTime())) return String(value)
+  return parsed.toLocaleString('id-ID', {
+    day: '2-digit',
+    month: '2-digit',
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit'
   })
+}
 
-  const labels = [...(targetRef.value.labels || []), timestamp]
+const addChartDataPoint = (targetRef, value, timestamp) => {
+  if (!Number.isFinite(value)) return
+
+  const labels = [
+    ...(targetRef.value.labels || []),
+    formatChartTimestamp(timestamp)
+  ]
   const values = [...(targetRef.value.values || []), parseFloat(value.toFixed(2))]
 
   if (labels.length > MAX_POINTS) {
@@ -171,25 +219,36 @@ watch(
   sensorData,
   newData => {
     if (!newData) return
+    const sampleTimestamp =
+      newData.sourceTimestamp ||
+      newData.replayTimestamp ||
+      newData.timestamp
 
-    if (typeof newData.temperature === 'number') {
-      addChartDataPoint(temperatureData, newData.temperature)
+    if (Number.isFinite(newData.temperature)) {
+      addChartDataPoint(
+        temperatureData,
+        newData.temperature,
+        sampleTimestamp
+      )
     }
 
-    if (typeof newData.power === 'number') {
-      addChartDataPoint(electricityData, newData.power)
-
-      const now = Date.now()
-      const deltaHours = (now - lastPowerTimestamp) / 3600000
-      if (deltaHours > 0 && deltaHours < 1) {
-        totalEnergyWh.value += newData.power * deltaHours
-      }
-      lastPowerTimestamp = now
+    if (Number.isFinite(newData.power)) {
+      addChartDataPoint(electricityData, newData.power, sampleTimestamp)
     }
 
-    if (typeof newData.peopleCount === 'number') {
+    if (Number.isFinite(newData.peopleCount)) {
       peopleCount.value = newData.peopleCount
-      addChartDataPoint(peopleData, newData.peopleCount)
+      addChartDataPoint(peopleData, newData.peopleCount, sampleTimestamp)
+    } else {
+      peopleCount.value = null
+    }
+
+    if (Number.isFinite(newData.energyCumulativeWh)) {
+      addChartDataPoint(
+        energyData,
+        newData.energyCumulativeWh,
+        sampleTimestamp
+      )
     }
 
   },
@@ -197,7 +256,7 @@ watch(
 )
 
 onMounted(() => {
-  connectMQTT()
+  connectTelemetry()
 
   timeInterval = setInterval(() => {
     currentTime.value = new Date()
@@ -205,7 +264,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-  disconnectMQTT()
+  disconnectTelemetry()
   if (timeInterval) clearInterval(timeInterval)
 })
 </script>

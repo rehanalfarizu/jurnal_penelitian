@@ -1,0 +1,11 @@
+Model Information:
+* title:	A dancing man in a cozy living room [Derivative]
+* source:	https://sketchfab.com/3d-models/a-dancing-man-in-a-cozy-living-room-derivative-4babbf4a58ed418da088f2bcf6fde9ad
+* author:	SourceCodeSneezer (https://sketchfab.com/SourceCodeSneezer)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "A dancing man in a cozy living room [Derivative]" (https://sketchfab.com/3d-models/a-dancing-man-in-a-cozy-living-room-derivative-4babbf4a58ed418da088f2bcf6fde9ad) by SourceCodeSneezer (https://sketchfab.com/SourceCodeSneezer) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -22,7 +22,7 @@ dist/
 downloads/
 eggs/
 .eggs/
-lib/
+/lib/
 lib64/
 parts/
 sdist/
@@ -262,6 +262,8 @@ v7_visualization.ipynb
 *_verifikasi.txt
 ppt_slides_content.txt
 *.txt
+!/requirements.txt
+!Digital_Twin/dashboard_digitaltwin/view_virtual/public/models/3d twin/license.txt
 
 # Decommissioned PKL/joblib/artifacts
 anomaly_indices.pkl

@@ -5,15 +5,14 @@
       :is-dark-mode="isDarkMode"
       icon="🌡️"
       icon-type="info"
-      title="Menunggu Data Suhu"
-      description="Sistem menunggu data dari sensor suhu dan kelembaban"
+      title="Menunggu Suhu Replay"
+      description="Grafik menunggu payload suhu dari API replay historis"
       :actions="[
-        { icon: '🔌', text: 'Pastikan MQTT broker terhubung' },
-        { icon: '📡', text: 'Periksa koneksi sensor DHT11' },
-        { icon: '⏱️', text: 'Data akan muncul dalam beberapa detik' }
+        { icon: '▶️', text: 'Pastikan replay API berjalan' },
+        { icon: '🔗', text: 'Periksa endpoint telemetry lokal' }
       ]"
       :show-status="true"
-      status-text="Menunggu koneksi sensor..."
+      status-text="Menunggu payload replay..."
       status-class="waiting"
     />
     <Line
@@ -183,7 +182,6 @@ const chartOptions = computed(() => {
   position: relative;
 }
 </style>
-
 
 
 

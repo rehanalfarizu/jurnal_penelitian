@@ -1,13 +1,23 @@
 {
   "scope": {
-    "compute": "Measured on this machine using time.perf_counter_ns; not a Raspberry Pi or public-cloud measurement.",
+    "evaluation_type": "historical_replay_architecture_benchmark",
+    "compute": "Measured on this machine using time.perf_counter_ns; not a dedicated edge device measurement.",
     "network": "configured network emulation; not a measured public cloud",
     "sample_size": 5000,
-    "model_name": "ridge",
+    "messages_benchmarked": 5000,
+    "available_rows_are_not_messages_benchmarked": true,
+    "near_realtime_deadline": {
+      "milliseconds": 3500.0,
+      "basis": "operational deadline rounded from the original trace median inter-record gap of 3.5251918 seconds; not the legacy firmware nominal publish interval"
+    },
     "workload": {
-      "source_type": "legacy_augmented_replay",
-      "available_rows": 2027520,
-      "sample_selection": "evenly spaced positions across the complete augmented file",
+      "source_type": "historical_replay",
+      "available_rows_scanned": 2027520,
+      "messages_benchmarked": 5000,
+      "available_rows_are_not_messages_benchmarked": true,
+      "independent_reference_rows": 92160,
+      "lineage_classification": "deterministic_replay_of_transformed_historical_trace",
+      "sample_selection": "evenly spaced positions across all historical replay blocks",
       "covered_replay_blocks": [
         0,
         1,
@@ -32,44 +42,39 @@
         20,
         21
       ],
-      "role": "architecture latency, throughput, routing, and Web-3D replay; excluded from model fitting and accuracy evaluation"
+      "role": "monitoring-path latency, throughput, routing, provenance, legacy-proxy energy, occupancy, and multiscale Digital Twin replay",
+      "used_for_model_training_or_accuracy": false
     },
     "runtime": {
       "platform": "macOS-15.7-x86_64-i386-64bit",
-      "python": "3.11.9",
-      "numpy": "2.3.5",
-      "pandas": "2.3.3"
+      "python": "3.12.12",
+      "numpy": "2.4.1",
+      "pandas": "3.0.3"
     }
   },
-  "actual_local_compute": {
-    "mean_ms": 2.9646953184,
-    "p50_ms": 2.1907180000000004,
-    "p95_ms": 6.298535450000001,
-    "p99_ms": 11.008697020000017,
-    "max_ms": 156.506985
+  "actual_local_monitoring": {
+    "mean_ms": 0.056245000600000004,
+    "p50_ms": 0.0448595,
+    "p95_ms": 0.10244195,
+    "p99_ms": 0.18061181000000004,
+    "max_ms": 3.139216,
+    "definition": "Structural/electrical value checks, power-consistency check, routing, and payload construction on the local host.",
+    "validation_scope": "Software-level structure and value checks only; not field validation or metrological validation of active power."
   },
   "actual_json_serialization": {
-    "mean_ms": 0.0280368472,
-    "p50_ms": 0.021765,
-    "p95_ms": 0.05532695000000001,
-    "p99_ms": 0.11711260000000007,
-    "max_ms": 1.601829
+    "mean_ms": 0.0373106186,
+    "p50_ms": 0.028088000000000002,
+    "p95_ms": 0.06762845,
+    "p99_ms": 0.1133983800000006,
+    "max_ms": 3.318955
   },
   "actual_edge_path": {
-    "mean_ms": 2.9927321656,
-    "p50_ms": 2.2195669999999996,
-    "p95_ms": 6.350157550000004,
-    "p99_ms": 11.039175600000023,
-    "max_ms": 158.108814,
-    "definition": "local inference plus JSON serialization"
-  },
-  "configured_cloud_path": {
-    "mean_ms": 48.20817189426332,
-    "p50_ms": 48.38572984448786,
-    "p95_ms": 68.03732725953438,
-    "p99_ms": 75.85243536363815,
-    "max_ms": 201.57154321208853,
-    "definition": "local compute proxy plus configured network latency; not a public-cloud measurement"
+    "mean_ms": 0.0935556192,
+    "p50_ms": 0.07323,
+    "p95_ms": 0.17186920000000006,
+    "p99_ms": 0.2698806700000002,
+    "max_ms": 3.6762449999999998,
+    "definition": "local monitoring processing plus JSON serialization"
   },
   "configured_network_emulation": {
     "parameters": {
@@ -79,42 +84,120 @@
       "drop_probability": 0.005
     },
     "generated_latency": {
-      "mean_ms": 45.21543972866333,
-      "p50_ms": 45.38248270917359,
-      "p95_ms": 64.57686537704625,
-      "p99_ms": 72.34009526846371,
-      "max_ms": 84.73957336917617
+      "mean_ms": 45.19127573550765,
+      "p50_ms": 43.42919703950167,
+      "p95_ms": 67.91922331453425,
+      "p99_ms": 72.6744948178083,
+      "max_ms": 73.89327531744718
     },
-    "generated_drop_count": 0
+    "generated_for_cloud_routed_messages": 114,
+    "generated_cloud_drop_count": 0
+  },
+  "configured_cloud_route_end_to_end": {
+    "mean_ms": 45.29241232322694,
+    "p50_ms": 43.53373553950168,
+    "p95_ms": 68.01796141453426,
+    "p99_ms": 72.7497015678083,
+    "max_ms": 74.16560431744718,
+    "routed_count": 114,
+    "delivered_count": 114,
+    "definition": "Local monitoring plus serialization and configured network latency, calculated only for cloud-routed messages.",
+    "warning": "Network latency is configured, not field-measured."
   },
   "configured_end_to_end": {
-    "mean_ms": 4.023093252369574,
-    "p50_ms": 2.252573,
-    "p95_ms": 7.817310450000002,
-    "p99_ms": 50.63683809149703,
-    "max_ms": 158.108814,
+    "mean_ms": 1.1239167059695745,
+    "p50_ms": 0.073407,
+    "p95_ms": 0.2015583,
+    "p99_ms": 46.106159298930315,
+    "max_ms": 74.16560431744718,
+    "attempted_count": 5000,
+    "delivered_count": 5000,
+    "dropped_count": 0,
+    "deadline_ms": 3500.0,
+    "deadline_basis": "operational deadline rounded from the original trace median inter-record gap of 3.5251918 seconds; not the legacy firmware nominal publish interval",
+    "deadline_miss_count": 0,
+    "deadline_miss_rate": 0.0,
+    "freshness_proxy": "Processing plus configured network latency; browser rendering and historical age are excluded.",
+    "warning": "Network latency is configured, not field-measured.",
+    "definition": "Overall mixture of edge-routed and delivered cloud-routed messages; route composition affects its percentiles."
+  },
+  "configured_cloud_only_baseline": {
+    "mean_ms": 45.31334866541625,
+    "p50_ms": 45.485551115960455,
+    "p95_ms": 64.67971621997859,
+    "p99_ms": 72.43722762691732,
+    "max_ms": 84.81146336917617,
+    "attempted_count": 5000,
+    "delivered_count": 4975,
+    "dropped_count": 25,
     "deadline_ms": 3500.0,
     "deadline_miss_count": 0,
     "deadline_miss_rate": 0.0,
-    "twin_staleness_proxy": "Equal to configured end-to-end latency; browser render latency is not included.",
-    "warning": "Includes configured, not field-measured, network latency."
+    "definition": "Counterfactual baseline in which every message traverses the same configured network profile after identical local processing and serialization.",
+    "warning": "Network latency is configured, not field-measured."
+  },
+  "architecture_comparison": {
+    "edge_cloud_p95_ms": 0.2015583,
+    "cloud_only_p95_ms": 64.67971621997859,
+    "configured_p95_latency_reduction_percent": 99.6883747923159,
+    "network_offload_rate": 0.9772,
+    "network_payload_bytes_edge_cloud": 249196,
+    "network_payload_bytes_cloud_only": 10921340,
+    "network_payload_bytes_avoided": 10672144,
+    "network_payload_reduction_rate": 0.977182653410662,
+    "comparison_basis": "Same replay sample, local processing, serialized payloads, seed, and configured network draws. This is a controlled emulation comparison, not a measured public-cloud trial."
   },
   "routing": {
     "edge_count": 4886,
     "cloud_count": 114,
-    "invalid_electrical_count": 0,
-    "power_anomaly_count": 114,
+    "reason_counts": {
+      "normal_local_monitoring": 4886,
+      "missing_or_nonfinite_value": 0,
+      "invalid_electrical_reading": 0,
+      "current_below_legacy_threshold": 0,
+      "power_above_trace_p99": 114
+    },
+    "covered_reasons": [
+      "normal_local_monitoring",
+      "power_above_trace_p99"
+    ],
+    "uncovered_reasons": [
+      "missing_or_nonfinite_value",
+      "invalid_electrical_reading",
+      "current_below_legacy_threshold"
+    ],
     "power_anomaly_threshold_w": 42.6,
-    "rule": "Cloud when voltage/current is zero or observed legacy power exceeds 42.6 W; otherwise edge.",
-    "basis": "p99 legacy power in the real calibration trace; invalid electrical readings are also routed to cloud"
+    "rule": "Cloud for missing/non-finite values, invalid electrical readings, current below the legacy 0.1 A threshold, or legacy power above 42.6 W.",
+    "basis": "p99 legacy power in the original historical trace plus software rules for missing, non-finite, invalid electrical, and sub-0.1 A readings"
+  },
+  "data_quality": {
+    "valid_count": 5000,
+    "invalid_count": 0,
+    "validity_definition": "All required values are finite and electrical values satisfy the software bounds; this is not field validation.",
+    "power_consistency_error_w": {
+      "mean": 0.5569360000000001,
+      "p95": 1.1000000000000014,
+      "max": 1.2000000000000028,
+      "above_0_11_w_count": 4233
+    },
+    "legacy_proxy_energy": {
+      "trace_cycle_max_cumulative_wh_in_sample": 3474.3708733044755,
+      "integrated_interval_count_in_sample": 4967,
+      "interpretation": "Trapezoidal integral of the transformed CSV replay payload's legacy V\u00d7I field. This is workload context; the archived field-trace energy is calculated separately and no direct kWh-meter or power-factor channel is included."
+    },
+    "occupancy": {
+      "occupied_count": 4748,
+      "unoccupied_count": 252,
+      "people_count_mean": 3.085,
+      "people_count_max": 5
+    }
   },
   "throughput": {
-    "sequential_model_inferences_per_second": 337.3027891917363,
-    "definition": "sample count divided by summed local inference compute time"
+    "sequential_messages_per_second": 6032.781876098543,
+    "definition": "Messages divided by measured wall time for monitoring and serialization loop on this machine."
   },
   "payload": {
-    "mean_bytes": 193.2526,
-    "p95_bytes": 194.0
-  },
-  "prediction_checksum": 191422.39230627625
+    "mean_bytes": 2184.268,
+    "p95_bytes": 2190.0
+  }
 }

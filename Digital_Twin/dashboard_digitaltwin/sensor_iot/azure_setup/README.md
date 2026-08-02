@@ -12,7 +12,7 @@ ekspor, dan pembacaan telemetry:
 - `ExportSensorData`
 
 Fungsi rekomendasi/kontrol AC telah dihapus karena berada di luar target
-estimasi daya.
+pemantauan daya.
 
 Gunakan `.env.template` untuk membuat konfigurasi lokal. Jangan commit
 connection string, function key, device key, atau password. Nama resource,

@@ -1,12 +1,5 @@
 {
-    "azureFunctions.deploySubpath": "dashboard_digitaltwin/sensor_iot/azure_setup/azure-function",
-    "azureFunctions.postDeployTask": "npm install (functions)",
-    "azureFunctions.projectLanguage": "JavaScript",
-    "azureFunctions.projectRuntime": "~4",
-    "debug.internalConsoleOptions": "neverOpen",
-    "azureFunctions.projectSubpath": "dashboard_digitaltwin/sensor_iot/azure_setup/azure-function",
-    "azureFunctions.preDeployTask": "npm prune (functions)",
-    "workbench.editorAssociations": {
-        "*.ipynb": "jupyter-notebook"
-    }
+  "workbench.editorAssociations": {
+    "*.ipynb": "jupyter-notebook"
+  }
 }

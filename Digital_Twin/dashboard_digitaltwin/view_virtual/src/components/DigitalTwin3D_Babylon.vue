@@ -39,13 +39,10 @@
       <button @click="toggleAnimation" class="btn btn-primary">
         {{ isAnimating ? '⏸️ Pause' : '▶️ Play' }}
       </button>
-    </div>
-    
-    <!-- Hover Tooltip -->
-    <div v-if="hoveredMesh && !selectedItem" class="hover-tooltip">
-      <span class="tooltip-icon">{{ hoveredMesh.info?.icon || '📍' }}</span>
-      <span class="tooltip-text">{{ hoveredMesh.info?.name || hoveredMesh.name }}</span>
-      <span class="tooltip-hint">Klik untuk detail</span>
+      <span class="telemetry-legend">
+        Indikator 3D: {{ routeVisualLabel }} · okupansi
+        {{ formatTelemetryValue(peopleCount, 0, ' orang') }}
+      </span>
     </div>
     
     <!-- Popup Detail Item -->
@@ -72,16 +69,23 @@
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import * as BABYLON from '@babylonjs/core'
 import '@babylonjs/loaders/glTF'
-import '@babylonjs/loaders/glTF'
 
 const props = defineProps({
   sensorData: {
     type: Object,
-    default: () => ({ temperature: 0, voltage: 0, current: 0, humidity: 0, power: 0 })
+    default: () => ({
+      temperature: null,
+      voltage: null,
+      current: null,
+      humidity: null,
+      power: null,
+      route: 'unavailable',
+      valid: false
+    })
   },
   peopleCount: {
     type: Number,
-    default: 0
+    default: null
   },
   isDarkMode: {
     type: Boolean,
@@ -92,7 +96,22 @@ const props = defineProps({
 const canvas = ref(null)
 const isAnimating = ref(true)
 const selectedItem = ref(null)
-const hoveredMesh = ref(null)
+
+const isFiniteTelemetryValue = value => {
+  return value !== null && value !== undefined && Number.isFinite(Number(value))
+}
+
+const formatTelemetryValue = (value, digits, unit = '') => {
+  return isFiniteTelemetryValue(value)
+    ? `${Number(value).toFixed(digits)}${unit}`
+    : '—'
+}
+
+const routeVisualLabel = computed(() => {
+  if (props.sensorData.sourceType === 'unavailable') return 'telemetry belum tersedia'
+  if (!props.sensorData.valid) return 'payload tidak valid'
+  return props.sensorData.route === 'cloud' ? 'rute cloud' : 'rute edge'
+})
 
 // Sensor Icons Configuration
 const sensorIcons = computed(() => [
@@ -100,7 +119,7 @@ const sensorIcons = computed(() => [
     id: 'temperature',
     emoji: '🌡️',
     label: 'Suhu',
-    value: `${props.sensorData.temperature.toFixed(1)}°C`,
+    value: formatTelemetryValue(props.sensorData.temperature, 1, '°C'),
     gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
     data: {
       temperature: props.sensorData.temperature,
@@ -111,7 +130,7 @@ const sensorIcons = computed(() => [
     id: 'humidity',
     emoji: '💧',
     label: 'Kelembaban',
-    value: `${props.sensorData.humidity.toFixed(1)}%`,
+    value: formatTelemetryValue(props.sensorData.humidity, 1, '%'),
     gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
     data: {
       humidity: props.sensorData.humidity,
@@ -122,7 +141,7 @@ const sensorIcons = computed(() => [
     id: 'voltage',
     emoji: '🔌',
     label: 'Tegangan',
-    value: `${props.sensorData.voltage.toFixed(1)}V`,
+    value: formatTelemetryValue(props.sensorData.voltage, 1, ' V'),
     gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
     data: {
       voltage: props.sensorData.voltage,
@@ -133,7 +152,7 @@ const sensorIcons = computed(() => [
     id: 'current',
     emoji: '⚡',
     label: 'Arus',
-    value: `${props.sensorData.current.toFixed(2)}A`,
+    value: formatTelemetryValue(props.sensorData.current, 2, ' A'),
     gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
     data: {
       current: props.sensorData.current,
@@ -143,12 +162,12 @@ const sensorIcons = computed(() => [
   {
     id: 'power',
     emoji: '💡',
-    label: 'Daya',
-    value: `${props.sensorData.power.toFixed(1)}W`,
+    label: 'Daya Legacy',
+    value: formatTelemetryValue(props.sensorData.power, 1, ' W'),
     gradient: 'linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%)',
     data: {
       power: props.sensorData.power,
-      sensor: 'Konsumsi Listrik'
+      source: 'Daya legacy pada payload replay'
     }
   }
 ])
@@ -157,34 +176,18 @@ let engine = null
 let scene = null
 let camera = null
 let blenderModel = null
-let highlightLayer = null
+let routeIndicatorMaterial = null
+let occupancyIndicatorMesh = null
+let occupancyIndicatorMaterial = null
 const modelLoaded = ref(false)
 const loadingProgress = ref(0)
 const loadingStatus = ref('Initializing 3D Engine...')
 const loadingDetails = ref('')
 let loadStartTime = null
-let lastLoadedBytes = 0
 let downloadSpeed = 0
 
-// Mapping nama mesh ke informasi ruangan (sesuai scene.gltf)
-const roomMapping = {
-  // Ruangan utama dari scene.gltf
-  'LivingRoomWallper': { name: 'Living Room', type: 'living', icon: '🛋️' },
-  'KitchenTiles': { name: 'Kitchen', type: 'kitchen', icon: '🍳' },
-  'ToiletTiles': { name: 'Toilet', type: 'toilet', icon: '🚻' },
-  'ToiletFloorTiles': { name: 'Toilet Floor', type: 'toilet', icon: '🚻' },
-  'BedRoomWallper': { name: 'Bedroom', type: 'bedroom', icon: '🛏️' },
-  'DoorMaterial': { name: 'Pintu', type: 'structure', icon: '🚪' },
-  'WoodenFloor': { name: 'Lantai Kayu', type: 'structure', icon: '🪵' },
-  'JustWhite': { name: 'Dinding', type: 'structure', icon: '🧱' },
-  'Brick': { name: 'Dinding Bata', type: 'structure', icon: '🧱' },
-  // Fallback untuk mesh lain
-  'wall': { name: 'Dinding', type: 'structure', icon: '🧱' },
-  'floor': { name: 'Lantai', type: 'structure', icon: '⬛' },
-  'door': { name: 'Pintu', type: 'structure', icon: '🚪' },
-  'window': { name: 'Jendela', type: 'structure', icon: '🪟' },
-  'acBody': { name: 'AC Unit', type: 'equipment', icon: '❄️' },
-}
+const handleResize = () => engine?.resize()
+const preventCanvasWheel = event => event.preventDefault()
 
 onMounted(() => {
   setTimeout(() => {
@@ -308,13 +311,10 @@ const initBabylonJS = () => {
 
     console.log('✅ Babylon.js initialized')
 
-    // Setup mesh click detection (disabled for now)
-    // setupMeshInteraction()
-
     // Prevent page scroll/zoom when scrolling on canvas - only zoom 3D view
-    canvas.value.addEventListener('wheel', (event) => {
-      event.preventDefault()
-    }, { passive: false })
+    canvas.value.addEventListener('wheel', preventCanvasWheel, {
+      passive: false
+    })
 
     // Load model
     loadModel(shadowGenerator)
@@ -327,9 +327,7 @@ const initBabylonJS = () => {
     })
 
     // Handle resize
-    window.addEventListener('resize', () => {
-      engine.resize()
-    })
+    window.addEventListener('resize', handleResize)
 
   } catch (error) {
     console.error('Error initializing Babylon.js:', error)
@@ -351,164 +349,10 @@ const formatTime = (seconds) => {
   return `${mins}m ${secs}s`
 }
 
-// Setup interaksi klik dan hover pada mesh
-const setupMeshInteraction = () => {
-  // Create highlight layer untuk efek hover
-  highlightLayer = new BABYLON.HighlightLayer("highlightLayer", scene)
-  highlightLayer.innerGlow = false
-  highlightLayer.outerGlow = true
-  
-  // Hover - highlight mesh saat mouse over
-  scene.onPointerMove = (evt, pickInfo) => {
-    // Remove previous highlight
-    if (hoveredMesh.value && hoveredMesh.value.mesh) {
-      highlightLayer.removeMesh(hoveredMesh.value.mesh)
-      hoveredMesh.value = null
-    }
-    
-    if (pickInfo.hit && pickInfo.pickedMesh) {
-      const mesh = pickInfo.pickedMesh
-      const meshName = mesh.name || ''
-      
-      // Skip jika mesh adalah particle atau effect
-      if (meshName.includes('particle') || meshName.includes('Particle')) return
-      
-      // Highlight mesh
-      highlightLayer.addMesh(mesh, new BABYLON.Color3(0.2, 0.6, 1)) // Blue highlight
-      
-      // Get room info
-      const roomInfo = getRoomInfo(meshName)
-      hoveredMesh.value = {
-        mesh: mesh,
-        name: meshName,
-        info: roomInfo
-      }
-      
-      // Change cursor
-      canvas.value.style.cursor = 'pointer'
-    } else {
-      canvas.value.style.cursor = 'grab'
-    }
-  }
-  
-  // Click - show popup with details
-  scene.onPointerDown = (evt, pickInfo) => {
-    if (pickInfo.hit && pickInfo.pickedMesh && evt.button === 0) {
-      const mesh = pickInfo.pickedMesh
-      const meshName = mesh.name || ''
-      
-      // Skip particle meshes
-      if (meshName.includes('particle') || meshName.includes('Particle')) return
-      
-      console.log('🖱️ Clicked mesh:', meshName)
-      
-      // Get room info and show popup
-      const roomInfo = getRoomInfo(meshName)
-      showMeshPopup(mesh, roomInfo)
-    }
-  }
-  
-  console.log('✅ Mesh interaction setup complete')
-}
-
-// Get room info based on mesh name
-const getRoomInfo = (meshName) => {
-  // Check exact match first
-  if (roomMapping[meshName]) {
-    return roomMapping[meshName]
-  }
-  
-  // Check partial match
-  const lowerName = meshName.toLowerCase()
-  for (const [key, value] of Object.entries(roomMapping)) {
-    if (lowerName.includes(key.toLowerCase())) {
-      return value
-    }
-  }
-  
-  // Default for unknown mesh
-  return {
-    name: meshName || 'Unknown Object',
-    type: 'other',
-    icon: '📍'
-  }
-}
-
-// Show popup when mesh is clicked
-const showMeshPopup = (mesh, roomInfo) => {
-  // Get sensor data based on room type
-  let sensorData = {}
-  let status = 'normal'
-  let statusText = 'Status Normal'
-  
-  switch (roomInfo.type) {
-    case 'living':
-    case 'bedroom':
-      sensorData = {
-        temperature: props.sensorData.temperature,
-        humidity: props.sensorData.humidity,
-        peopleCount: props.peopleCount
-      }
-      if (props.sensorData.temperature > 28) {
-        status = 'warning'
-        statusText = '⚠️ Suhu Tinggi'
-      }
-      break
-    case 'kitchen':
-      sensorData = {
-        temperature: props.sensorData.temperature,
-        humidity: props.sensorData.humidity,
-        power: props.sensorData.power
-      }
-      break
-    case 'toilet':
-      sensorData = {
-        humidity: props.sensorData.humidity,
-        status: 'Available'
-      }
-      break
-    case 'equipment':
-      sensorData = {
-        temperature: props.sensorData.temperature,
-        power: props.sensorData.power,
-        status: 'Active'
-      }
-      break
-    case 'structure':
-      sensorData = {
-        condition: 'Good',
-        lastCheck: new Date().toLocaleDateString('id-ID')
-      }
-      break
-    default:
-      sensorData = {
-        temperature: props.sensorData.temperature,
-        humidity: props.sensorData.humidity
-      }
-  }
-  
-  selectedItem.value = {
-    name: `${roomInfo.icon} ${roomInfo.name}`,
-    meshName: mesh.name,
-    type: roomInfo.type,
-    data: sensorData,
-    status: status,
-    statusText: statusText,
-    position: {
-      x: mesh.position?.x?.toFixed(2) || 0,
-      y: mesh.position?.y?.toFixed(2) || 0,
-      z: mesh.position?.z?.toFixed(2) || 0
-    }
-  }
-  
-  console.log('📊 Showing popup for:', roomInfo.name)
-}
-
 const loadModel = (shadowGenerator) => {
   console.log('🏠 Loading apartment model from local...')
   loadingStatus.value = 'Loading 3D Model...'
   loadStartTime = Date.now()
-  lastLoadedBytes = 0
   
   // Local model path - using 3d twin folder
   const modelPath = "/models/3d twin/"
@@ -653,22 +497,40 @@ const createACUnit = (shadowGenerator) => {
     shadowGenerator.addShadowCaster(vent)
   }
   
-  // LED indicator (hijau = AC hidup)
+  // Indikator abstrak rute telemetry. Warna tidak menyatakan status AC:
+  // cyan=edge, jingga=cloud, merah=payload tidak valid, abu-abu=belum ada data.
   const led = BABYLON.MeshBuilder.CreateSphere("acLED", {
     diameter: 0.04
   }, scene)
   led.position = new BABYLON.Vector3(0.4, 0.08, 0.19)
   
   const ledMaterial = new BABYLON.StandardMaterial("ledMaterial", scene)
-  ledMaterial.emissiveColor = new BABYLON.Color3(0, 1, 0)
-  ledMaterial.diffuseColor = new BABYLON.Color3(0, 0.6, 0)
+  ledMaterial.emissiveColor = new BABYLON.Color3(0.25, 0.25, 0.25)
+  ledMaterial.diffuseColor = new BABYLON.Color3(0.15, 0.15, 0.15)
   led.material = ledMaterial
   led.parent = acBody
+  routeIndicatorMaterial = ledMaterial
   
   // Add glow effect
   const glowLayer = new BABYLON.GlowLayer("glow", scene)
   glowLayer.addIncludedOnlyMesh(led)
   glowLayer.intensity = 1.0
+
+  // Batang okupansi abstrak. Tingginya memetakan hitungan replay 0–5,
+  // rentang yang tercatat pada audit trace; ia tidak menunjukkan posisi orang.
+  occupancyIndicatorMesh = BABYLON.MeshBuilder.CreateCylinder(
+    'occupancyReplayIndicator',
+    { diameter: 0.06, height: 0.3 },
+    scene
+  )
+  occupancyIndicatorMesh.position = new BABYLON.Vector3(0.48, -0.03, 0.19)
+  occupancyIndicatorMesh.parent = acBody
+  occupancyIndicatorMaterial = new BABYLON.StandardMaterial(
+    'occupancyReplayMaterial',
+    scene
+  )
+  occupancyIndicatorMaterial.diffuseColor = new BABYLON.Color3(0.1, 0.1, 0.1)
+  occupancyIndicatorMesh.material = occupancyIndicatorMaterial
   
   // Louver/Air flow direction indicator
   const louver = BABYLON.MeshBuilder.CreateBox("louver", {
@@ -692,66 +554,12 @@ const createACUnit = (shadowGenerator) => {
   shadowGenerator.addShadowCaster(acBody)
   shadowGenerator.addShadowCaster(ventPanel)
   shadowGenerator.addShadowCaster(louver)
-  
-  // Create particle system for cold air effect
-  const particleSystem = new BABYLON.ParticleSystem("acParticles", 2000, scene)
-  
-  // Texture for particles (using a white dot)
-  particleSystem.particleTexture = new BABYLON.Texture("https://www.babylonjs-playground.com/textures/flare.png", scene)
-  
-  // Position where particles emit from (from AC vents)
-  // AC body is at (0, 2.5, -4.5), emit from front vents
-  particleSystem.emitter = acBody.position.clone()
-  particleSystem.minEmitBox = new BABYLON.Vector3(-0.5, -0.1, 0.18)
-  particleSystem.maxEmitBox = new BABYLON.Vector3(0.5, -0.05, 0.35)
-  
-  // Colors
-  particleSystem.color1 = new BABYLON.Color4(0.7, 0.9, 1.0, 0.3)
-  particleSystem.color2 = new BABYLON.Color4(0.8, 0.95, 1.0, 0.2)
-  particleSystem.colorDead = new BABYLON.Color4(0.9, 0.98, 1.0, 0)
-  
-  // Size of particles
-  particleSystem.minSize = 0.05
-  particleSystem.maxSize = 0.15
-  
-  // Life time of particles
-  particleSystem.minLifeTime = 0.5
-  particleSystem.maxLifeTime = 1.5
-  
-  // Emission rate
-  particleSystem.emitRate = 200
-  
-  // Blend mode
-  particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ADD
-  
-  // Direction of particles (downward and forward into the room)
-  particleSystem.direction1 = new BABYLON.Vector3(-0.3, -0.5, 0.5)
-  particleSystem.direction2 = new BABYLON.Vector3(0.3, -0.8, 1.0)
-  
-  // Speed
-  particleSystem.minEmitPower = 0.5
-  particleSystem.maxEmitPower = 1.2
-  particleSystem.updateSpeed = 0.01
-  
-  // Gravity effect (slight downward)
-  particleSystem.gravity = new BABYLON.Vector3(0, -0.5, 0)
-  
-  // Start the particle system
-  particleSystem.start()
-  
-  // Animation - subtle vibration effect
-  let angle = 0
-  scene.registerBeforeRender(() => {
-    angle += 0.02
-    acBody.position.y = 2.5 + Math.sin(angle) * 0.003
-    
-    // Update particle emitter position to follow AC body exactly
-    particleSystem.emitter = acBody.position.clone()
-  })
-  
+
+  updateSensorVisualization(props.sensorData)
+  updatePeopleVisualization(props.peopleCount)
+
   console.log('✅ AC unit created above door INSIDE room at position:', acBody.position)
-  console.log('✅ Cold air particle system started')
-  console.log('   Mounted on interior wall above door')
+  console.log('✅ Replay route and occupancy indicators attached')
 }
 
 const resetCamera = () => {
@@ -763,28 +571,18 @@ const resetCamera = () => {
   }
 }
 
-const zoomIn = () => {
-  if (camera) {
-    camera.radius = Math.max(camera.radius - 2, camera.lowerRadiusLimit)
-  }
-}
-
-const zoomOut = () => {
-  if (camera) {
-    camera.radius = Math.min(camera.radius + 2, camera.upperRadiusLimit)
-  }
-}
-
 const toggleAnimation = () => {
   isAnimating.value = !isAnimating.value
 }
 
 const showSensorData = (icon) => {
+  const hasValue = Object.values(icon.data).some(isFiniteTelemetryValue)
   selectedItem.value = {
+    sensorId: icon.id,
     name: `Sensor ${icon.label}`,
     data: icon.data,
-    status: 'active',
-    statusText: 'Sensor Aktif'
+    status: hasValue ? 'active' : 'warning',
+    statusText: hasValue ? 'Payload Replay Tersedia' : 'Nilai Tidak Tersedia'
   }
 }
 
@@ -793,25 +591,52 @@ const closePopup = () => {
 }
 
 const updateSensorVisualization = (data) => {
-  // Implement sensor visualization if needed
-  console.log('Sensor data updated:', data)
+  if (!routeIndicatorMaterial) return
+
+  let color = new BABYLON.Color3(0.25, 0.25, 0.25)
+  if (data && data.sourceType !== 'unavailable') {
+    if (!data?.valid) {
+      color = new BABYLON.Color3(0.9, 0.15, 0.12)
+    } else if (data?.route === 'cloud') {
+      color = new BABYLON.Color3(1, 0.55, 0.05)
+    } else {
+      color = new BABYLON.Color3(0.05, 0.75, 0.85)
+    }
+  }
+  routeIndicatorMaterial.emissiveColor = color
+  routeIndicatorMaterial.diffuseColor = color.scale(0.55)
 }
 
 const updatePeopleVisualization = (count) => {
-  // Implement people count visualization if needed
-  console.log('People count updated:', count)
+  if (!occupancyIndicatorMesh || !occupancyIndicatorMaterial) return
+
+  const hasCount = isFiniteTelemetryValue(count) && Number(count) >= 0
+  occupancyIndicatorMesh.isVisible = hasCount
+  if (!hasCount) return
+
+  const normalizedCount = Math.min(Number(count), 5) / 5
+  occupancyIndicatorMesh.scaling.y = Math.max(0.12, normalizedCount)
+  const color =
+    Number(count) === 0
+      ? new BABYLON.Color3(0.18, 0.18, 0.2)
+      : new BABYLON.Color3(0.15, 0.65, 0.95)
+  occupancyIndicatorMaterial.diffuseColor = color
+  occupancyIndicatorMaterial.emissiveColor = color.scale(0.35)
 }
 
 const updateSelectedItem = () => {
-  // Update selected item data
-  if (selectedItem.value) {
-    selectedItem.value.data = {
-      temperature: props.sensorData.temperature,
-      humidity: props.sensorData.humidity,
-      voltage: props.sensorData.voltage,
-      current: props.sensorData.current,
-      power: props.sensorData.power
-    }
+  if (!selectedItem.value?.sensorId) return
+  const icon = sensorIcons.value.find(
+    candidate => candidate.id === selectedItem.value.sensorId
+  )
+  if (!icon) return
+  const hasValue = Object.values(icon.data).some(isFiniteTelemetryValue)
+  selectedItem.value = {
+    ...selectedItem.value,
+    name: `Sensor ${icon.label}`,
+    data: icon.data,
+    status: hasValue ? 'active' : 'warning',
+    statusText: hasValue ? 'Payload Replay Tersedia' : 'Nilai Tidak Tersedia'
   }
 }
 
@@ -828,6 +653,8 @@ const formatLabel = (key) => {
 }
 
 const formatValue = (key, value) => {
+  if (typeof value === 'string') return value
+  if (!isFiniteTelemetryValue(value)) return '—'
   const units = {
     temperature: '°C',
     humidity: '%',
@@ -836,16 +663,23 @@ const formatValue = (key, value) => {
     power: 'W',
     peopleCount: ' orang'
   }
-  return `${value}${units[key] || ''}`
+  const digits = key === 'current' ? 2 : key === 'peopleCount' ? 0 : 1
+  return formatTelemetryValue(value, digits, units[key] || '')
 }
 
 const cleanup = () => {
+  window.removeEventListener('resize', handleResize)
+  canvas.value?.removeEventListener('wheel', preventCanvasWheel)
   if (engine) {
     engine.dispose()
   }
-  window.removeEventListener('resize', () => {
-    engine?.resize()
-  })
+  engine = null
+  scene = null
+  camera = null
+  blenderModel = null
+  routeIndicatorMaterial = null
+  occupancyIndicatorMesh = null
+  occupancyIndicatorMaterial = null
 }
 </script>
 
@@ -966,6 +800,19 @@ const cleanup = () => {
   display: flex;
   gap: 10px;
   z-index: 5;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.telemetry-legend {
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.88);
+  color: #f8fafc;
+  font-size: 12px;
+  line-height: 1.3;
+  white-space: nowrap;
 }
 
 /* Sensor Icons Overlay */
@@ -1197,53 +1044,6 @@ const cleanup = () => {
   background: #ef4444;
 }
 
-/* Hover Tooltip Styles */
-.hover-tooltip {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(15, 23, 42, 0.9);
-  backdrop-filter: blur(10px);
-  padding: 12px 20px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  z-index: 50;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateX(-50%) translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(-50%) translateY(0);
-  }
-}
-
-.tooltip-icon {
-  font-size: 24px;
-}
-
-.tooltip-text {
-  font-size: 16px;
-  font-weight: 600;
-  color: #f8fafc;
-}
-
-.tooltip-hint {
-  font-size: 12px;
-  color: #94a3b8;
-  padding-left: 10px;
-  border-left: 1px solid rgba(255, 255, 255, 0.2);
-}
-
 @media (max-width: 768px) {
   .sensor-icons-overlay {
     grid-template-columns: repeat(3, 1fr);
@@ -1265,6 +1065,11 @@ const cleanup = () => {
   
   .icon-value {
     font-size: 14px;
+  }
+
+  .telemetry-legend {
+    white-space: normal;
+    text-align: center;
   }
 }
 

@@ -5,13 +5,13 @@
       :is-dark-mode="isDarkMode"
       icon="👥"
       icon-type="info"
-      title="Menunggu Data People Counter"
-      description="Sistem menunggu data dari kamera penghitung orang"
+      title="Menunggu Okupansi Replay"
+      description="Grafik menunggu nilai jumlah orang dari API replay historis"
       :actions="[
-        { icon: '⏳', text: 'Menunggu koneksi ke data sensor' }
+        { icon: '▶️', text: 'Pastikan replay API berjalan' }
       ]"
       :show-status="true"
-      status-text="Menunggu deteksi kamera..."
+      status-text="Menunggu payload replay..."
       status-class="waiting"
     />
     <template v-else>
@@ -243,7 +243,6 @@ const chartOptions = computed(() => {
   z-index: 1;
 }
 </style>
-
 
 
 

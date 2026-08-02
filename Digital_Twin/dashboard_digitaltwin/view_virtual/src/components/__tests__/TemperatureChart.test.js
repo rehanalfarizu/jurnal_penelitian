@@ -35,7 +35,7 @@ describe('TemperatureChart.vue', () => {
         }
       })
       
-      expect(wrapper.text()).toContain('Menunggu Data Suhu')
+      expect(wrapper.text()).toContain('Menunggu Suhu Replay')
     })
 
     it('shows EmptyState with correct icon', () => {
@@ -55,7 +55,7 @@ describe('TemperatureChart.vue', () => {
         }
       })
       
-      expect(wrapper.text()).toContain('Pastikan MQTT broker terhubung')
+      expect(wrapper.text()).toContain('Pastikan replay API berjalan')
     })
   })
 

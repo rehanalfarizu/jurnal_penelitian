@@ -1,117 +1,134 @@
-"""Small local HTTP replay service for the Web-3D research prototype."""
+"""Local HTTP replay service for the multiscale Digital Twin prototype."""
 
 from __future__ import annotations
 
 import argparse
+import copy
 import json
+import threading
+import time
+from collections import deque
+from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
 
-import joblib
-import numpy as np
 import pandas as pd
 
-from src.data.prepare_augmented_workload import prepare_augmented_workload
-
-
-def _safe_number(value):
-    if pd.isna(value):
-        return None
-    return float(value)
+from src.benchmark.edge_cloud_benchmark import build_monitoring_record
+from src.data.prepare_historical_replay import prepare_historical_replay
 
 
 class ReplayState:
     def __init__(
         self,
-        csv_path: Path,
-        model_path: Path | None,
+        input_path: Path,
+        config: dict,
         *,
-        input_format: str = "synthetic",
-        legacy_config: dict | None = None,
+        input_format: str = "canonical",
+        sample_size: int | None = None,
     ):
-        if input_format == "legacy_augmented":
-            if legacy_config is None:
-                raise ValueError("legacy_config wajib untuk legacy_augmented.")
-            self.frame, self.workload_audit = prepare_augmented_workload(
-                csv_path,
-                expected_rows=int(legacy_config["expected_rows"]),
-                reference_rows=int(legacy_config["reference_rows_per_replay"]),
-                sample_size=int(legacy_config["sample_size"]),
+        replay_config = config["replay"]
+        if input_format == "historical_csv":
+            self.frame, self.workload_audit = prepare_historical_replay(
+                input_path,
+                expected_rows=int(replay_config["expected_rows"]),
+                reference_rows=int(
+                    replay_config["reference_rows_per_replay"]
+                ),
+                sample_size=sample_size
+                or int(replay_config["benchmark_sample_size"]),
+                reference_trace=Path(config["data"]["reference_trace"]),
+                max_energy_gap_seconds=float(
+                    config["energy_integration"]["max_gap_seconds"]
+                ),
             )
-            self.source_label = "legacy_augmented_replay"
         else:
-            self.frame = pd.read_csv(csv_path)
+            self.frame = pd.read_csv(input_path)
             self.workload_audit = None
-            self.source_label = "synthetic_calibrated"
-        self.frame = self.frame[
-            self.frame["packet_received"].astype(str).str.lower().eq("true")
-        ].dropna(
-            subset=[
-                "observed_temperature_c",
-                "observed_humidity_pct",
-                "observed_voltage_v",
-                "observed_current_a",
-                "observed_power_w",
-                "observed_people_count",
-            ]
-        )
+
+        required = {
+            "timestamp_utc",
+            "source_timestamp_utc",
+            "replay_timestamp_utc",
+            "device_id",
+            "source_type",
+            "lineage_classification",
+            "replay_id",
+            "replay_block_id",
+            "source_row_id",
+            "source_row_index",
+            "temperature_c",
+            "humidity_pct",
+            "voltage_v",
+            "current_a",
+            "power_legacy_w",
+            "power_formula_w",
+            "power_consistency_error_w",
+            "energy_interval_legacy_wh",
+            "energy_cumulative_legacy_wh",
+            "energy_integration_status",
+            "people_count",
+            "occupancy_status",
+            "voltage_status",
+            "current_status",
+        }
+        missing = required - set(self.frame.columns)
+        if missing:
+            raise ValueError(
+                f"Kolom replay kanonis tidak ditemukan: {sorted(missing)}"
+            )
         self.frame = self.frame.reset_index(drop=True)
         if self.frame.empty:
-            raise ValueError("Tidak ada baris telemetry valid untuk direplay.")
-        self.artifact = joblib.load(model_path) if model_path else None
+            raise ValueError("Tidak ada baris telemetry untuk direplay.")
+        self.threshold = float(
+            config["benchmark"]["cloud_routing"][
+                "power_anomaly_threshold_w"
+            ]
+        )
+        self.source_label = "historical_replay"
+        self.digital_twin_config = config.get("digital_twin")
+        self.lineage_classification = str(
+            self.frame.iloc[0]["lineage_classification"]
+        )
         self.index = 0
-
-    def _estimate(self, row: pd.Series) -> tuple[float, str, str]:
-        if not self.artifact:
-            return float(row["observed_power_w"]), "firmware_v_times_i", "observation_only"
-        timestamp = pd.Timestamp(row["timestamp_utc"])
-        hour = timestamp.hour + timestamp.minute / 60.0
-        values = row.to_dict()
-        values["hour_sin"] = np.sin(2 * np.pi * hour / 24.0)
-        values["hour_cos"] = np.cos(2 * np.pi * hour / 24.0)
-        features = self.artifact["features"]
-        x = pd.DataFrame([[values[name] for name in features]], columns=features)
-        estimate = float(self.artifact["model"].predict(x)[0])
-        return estimate, self.artifact["model_name"], self.artifact["scope"]
+        self._lock = threading.Lock()
+        self._served_records: deque[dict] = deque(maxlen=500)
 
     def record(self, row: pd.Series) -> dict:
-        estimate, model_name, model_scope = self._estimate(row)
-        return {
-            "timestamp_utc": row["timestamp_utc"],
-            "device_id": row["device_id"],
-            "scenario_id": row["scenario_id"],
-            "run_id": row["run_id"],
-            "source_type": row["source_type"],
-            "observed": {
-                "temperature_c": _safe_number(row["observed_temperature_c"]),
-                "humidity_pct": _safe_number(row["observed_humidity_pct"]),
-                "voltage_v": _safe_number(row["observed_voltage_v"]),
-                "current_a": _safe_number(row["observed_current_a"]),
-                "power_w": _safe_number(row["observed_power_w"]),
-                "people_count": int(row["observed_people_count"]),
-            },
-            "estimate": {
-                "power_w": estimate,
-                "model_name": model_name,
-                "model_scope": model_scope,
-            },
-            "processing": {
-                "tier": "replay",
-                "compute_latency_ms": 0.0,
-                "network_latency_ms": None,
-                "end_to_end_latency_ms": None,
-            },
-        }
+        emitted_at = datetime.now(timezone.utc).isoformat()
+        record, compute_ms = build_monitoring_record(
+            row,
+            self.threshold,
+            emitted_timestamp_utc=emitted_at,
+            digital_twin_config=self.digital_twin_config,
+        )
+        serialization_started = time.perf_counter_ns()
+        json.dumps(record, separators=(",", ":"), allow_nan=False)
+        serialization_ms = (
+            time.perf_counter_ns() - serialization_started
+        ) / 1_000_000
+        edge_path_ms = compute_ms + serialization_ms
+        record["processing"]["serialization_latency_ms"] = serialization_ms
+        record["processing"]["end_to_end_latency_ms"] = edge_path_ms
+        record["processing"]["freshness_ms"] = edge_path_ms
+        return record
 
     def latest(self) -> dict:
-        row = self.frame.iloc[self.index]
-        self.index = (self.index + 1) % len(self.frame)
-        return self.record(row)
+        with self._lock:
+            row_index = self.index
+            row = self.frame.iloc[row_index].copy()
+            self.index = (self.index + 1) % len(self.frame)
+            emitted_record = self.record(row)
+            self._served_records.append(copy.deepcopy(emitted_record))
+            return emitted_record
 
     def history(self, limit: int) -> list[dict]:
-        start = max(0, self.index - limit)
-        return [self.record(row) for _, row in self.frame.iloc[start : self.index].iterrows()]
+        with self._lock:
+            return [
+                copy.deepcopy(record)
+                for record in list(self._served_records)[-limit:]
+            ]
 
 
 def make_handler(state: ReplayState):
@@ -132,11 +149,35 @@ def make_handler(state: ReplayState):
                 return
             if request.path == "/api/telemetry/history":
                 query = parse_qs(request.query)
-                limit = min(500, max(1, int(query.get("limit", ["60"])[0])))
-                self._send({"success": True, "data": state.history(limit)})
+                try:
+                    requested_limit = int(query.get("limit", ["60"])[0])
+                except ValueError:
+                    self._send(
+                        {"success": False, "error": "invalid_limit"},
+                        status=400,
+                    )
+                    return
+                limit = min(500, max(1, requested_limit))
+                self._send(
+                    {"success": True, "data": state.history(limit)}
+                )
                 return
             if request.path == "/api/health":
-                self._send({"status": "ok", "source": state.source_label})
+                self._send(
+                    {
+                        "status": "ok",
+                        "source": state.source_label,
+                        "lineage_classification": (
+                            state.lineage_classification
+                        ),
+                        "rows_loaded": len(state.frame),
+                        "mode": "monitoring_without_power_estimation_model",
+                        "digital_twin": state.digital_twin_config,
+                        "replay_clock": (
+                            "request_driven_one_row_per_latest_call"
+                        ),
+                    }
+                )
                 return
             self._send({"success": False, "error": "not_found"}, status=404)
 
@@ -148,34 +189,36 @@ def make_handler(state: ReplayState):
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", type=Path, default=Path("outputs/synthetic_telemetry.csv"))
-    parser.add_argument("--model", type=Path, default=Path("outputs/power_estimator.joblib"))
+    parser.add_argument(
+        "--input",
+        type=Path,
+        default=Path("outputs/historical_replay_sample.csv"),
+    )
     parser.add_argument(
         "--input-format",
-        choices=["synthetic", "legacy_augmented"],
-        default="synthetic",
+        choices=["canonical", "historical_csv"],
+        default="canonical",
     )
-    parser.add_argument("--config", type=Path, default=Path("configs/experiment.json"))
+    parser.add_argument(
+        "--config", type=Path, default=Path("configs/experiment.json")
+    )
     parser.add_argument("--sample-size", type=int)
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=8000)
     args = parser.parse_args()
-    legacy_config = None
-    if args.input_format == "legacy_augmented":
-        config = json.loads(args.config.read_text(encoding="utf-8"))
-        workload = config["benchmark"]["workload"]
-        legacy_config = {
-            **workload,
-            "sample_size": args.sample_size or config["benchmark"]["sample_size"],
-        }
+    config = json.loads(args.config.read_text(encoding="utf-8"))
     state = ReplayState(
         args.input,
-        args.model if args.model.exists() else None,
+        config,
         input_format=args.input_format,
-        legacy_config=legacy_config,
+        sample_size=args.sample_size,
     )
-    server = ThreadingHTTPServer((args.host, args.port), make_handler(state))
-    print(f"Replay API: http://{args.host}:{args.port}/api/telemetry/latest")
+    server = ThreadingHTTPServer(
+        (args.host, args.port), make_handler(state)
+    )
+    print(
+        f"Replay API: http://{args.host}:{args.port}/api/telemetry/latest"
+    )
     server.serve_forever()
 
 
